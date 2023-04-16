@@ -6,7 +6,7 @@ import {
   DoubleArrowRightIcon,
   PlusIcon,
 } from "@radix-ui/react-icons";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -23,25 +23,22 @@ const dummyHistory = [
 ];
 
 export function Navbar() {
+  const [isSideNavbarExpanded, setIsSideNavbarExpanded] = useState(false);
   const sideNavbarRef = useRef<null | HTMLDivElement>(null);
   const doubleArrowRightIconRef = useRef<null | HTMLButtonElement>(null);
   const params = useParams();
 
   function showSideNavbar() {
-    if (sideNavbarRef.current != null) {
-      sideNavbarRef.current.style.display = "block";
-      if (doubleArrowRightIconRef.current != null) {
-        doubleArrowRightIconRef.current.style.display = "none";
-      }
+    setIsSideNavbarExpanded(true);
+    if (doubleArrowRightIconRef.current != null) {
+      doubleArrowRightIconRef.current.style.display = "none";
     }
   }
 
   function hideSideNavbar() {
-    if (sideNavbarRef.current != null) {
-      sideNavbarRef.current.style.display = "none";
-      if (doubleArrowRightIconRef.current != null) {
-        doubleArrowRightIconRef.current.style.display = "block";
-      }
+    setIsSideNavbarExpanded(false);
+    if (doubleArrowRightIconRef.current != null) {
+      doubleArrowRightIconRef.current.style.display = "block";
     }
   }
   return (
@@ -49,7 +46,7 @@ export function Navbar() {
       <div className="w-full fixed top-0 z-10 h-32 px-4 py-8 bg-gradient-to-b from-slate-950">
         <button
           ref={doubleArrowRightIconRef}
-          className="block lg:hidden"
+          className="lg:text-slate-950"
           onClick={showSideNavbar}
         >
           <DoubleArrowRightIcon style={{ height: 24, width: 24 }} />
@@ -58,7 +55,9 @@ export function Navbar() {
 
       <div
         ref={sideNavbarRef}
-        className="hidden lg:block absolute lg:relative max-w-xs h-screen py-4 pl-4 z-20"
+        className={`lg:block absolute lg:relative max-w-xs h-screen py-4 pl-4 z-20 transition-all ease-in-out duration-200  ${
+          isSideNavbarExpanded ? "translate-x-0 " : "-translate-x-full"
+        } lg:translate-x-0`}
       >
         <div className="w-full h-full py-4 px-4 space-y-4 flex flex-col bg-blur bg-slate-950 lg:bg-slate-400 bg-opacity-50 lg:bg-opacity-10 border-opacity-30 border-l border-t border-l-orange-500 border-t-orange-500 rounded-lg">
           <button
