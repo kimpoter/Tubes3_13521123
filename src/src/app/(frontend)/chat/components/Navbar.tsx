@@ -81,7 +81,7 @@ export function Navbar() {
           <ol className="space-y-4 pt-4">
             {dummyHistory.map((history) => {
               return (
-                <Link href={`/chat/${history.id}`}>
+                <Link href={`/chat/${history.id}`} key={history.id}>
                   <li
                     className={`py-2 px-4 flex flex-row items-center space-x-4 ${
                       params.id == history.id &&

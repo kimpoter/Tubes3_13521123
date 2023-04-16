@@ -26,7 +26,6 @@ export default function ChatBox({
       messageAreaRef.current.style.height =
         Math.min(messageAreaRef.current.scrollHeight, 72) + "px";
     }
-    console.log(chatlog);
   }, [message]);
 
   useEffect(() => {
@@ -104,7 +103,7 @@ export default function ChatBox({
       )}
 
       {chatlog.length > 0 && (
-        <ol id="chat-box" className="w-full overflow-scroll">
+        <ul id="chat-box" className="w-full overflow-scroll">
           {chatlog.map((chat) => {
             return (
               <li key={chat.timestamp}>
@@ -120,7 +119,7 @@ export default function ChatBox({
             );
           })}
           <div id="bottom" />
-        </ol>
+        </ul>
       )}
 
       <div
