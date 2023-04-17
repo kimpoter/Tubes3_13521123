@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function Home() {
+function Home() {
   return (
     <main className="main-background relative flex w-screen min-h-screen flex-col items-center justify-between p-24 bg-slate-950">
       <div className="flex flex-col items-center text-slate-400 text-center w-96 z-20">
@@ -51,3 +51,5 @@ export default function Home() {
     </main>
   );
 }
+
+export default Home;
