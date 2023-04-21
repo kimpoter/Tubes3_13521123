@@ -1,3 +1,5 @@
+"use client";
+
 import ChatBox from "../components/ChatBox";
 
 const dummy = [
@@ -115,8 +117,10 @@ const dummy = [
   },
 ];
 
-export default function ChatPage({ params }: { params: { id: string } }) {
+function ChatPage({ params }: { params: { id: string } }) {
   const chats = dummy.filter((value) => value.id == params.id);
-  console.log(params);
+
   return <ChatBox chats={chats[0].log} />;
 }
+
+export default ChatPage;
