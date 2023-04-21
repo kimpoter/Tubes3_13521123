@@ -25,6 +25,7 @@ export default function SignInForm() {
             name="email"
             id="email"
             className="text-zinc-500"
+            placeholder="akane@not.best.girl.hehe"
             onChange={(e) => setEmail(e.currentTarget.value)}
           />
         </div>
