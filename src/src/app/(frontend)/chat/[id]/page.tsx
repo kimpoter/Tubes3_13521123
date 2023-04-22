@@ -2,6 +2,7 @@
 
 import { MessageType } from "@prisma/client";
 import ChatBox from "../components/ChatBox";
+import { redirect } from "next/navigation";
 
 const dummy = [
   {
@@ -118,10 +119,12 @@ const dummy = [
   },
 ];
 
-function ChatPage({ params }: { params: { id: string } }) {
-  const chats = dummy.filter((value) => value.id == params.id)[0];
-
-  return <ChatBox messages={chats ? chats.messages : dummy[0].messages} />;
+async function ChatPage() {
+  return (
+    <>
+      <ChatBox />
+    </>
+  );
 }
 
 export default ChatPage;

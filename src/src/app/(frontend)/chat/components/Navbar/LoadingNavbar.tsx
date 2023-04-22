@@ -17,7 +17,7 @@ export default function LoadingNavbar() {
   return (
     <NavbarLayout>
       {(hideSideNavbar) => (
-        <ul className="w-64 space-y-4 pt-4">
+        <ul className="w-64 flex-grow space-y-4 pt-4">
           {dummysession.map((session) => {
             return (
               <li
