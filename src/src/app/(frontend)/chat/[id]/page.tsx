@@ -121,7 +121,7 @@ const dummy = [
 function ChatPage({ params }: { params: { id: string } }) {
   const chats = dummy.filter((value) => value.id == params.id)[0];
 
-  return <ChatBox messages={chats.messages} />;
+  return <ChatBox messages={chats ? chats.messages : dummy[0].messages} />;
 }
 
 export default ChatPage;

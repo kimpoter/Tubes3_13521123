@@ -6,6 +6,8 @@ import { useEffect, useRef, useState, KeyboardEvent, Suspense } from "react";
 import { AiChatBubble } from "./ChatBubble/AiChatBubble";
 import { UserChatBubble } from "./ChatBubble/UserChatBubble";
 import { MessageType } from "@prisma/client";
+import { useSessionContext } from "../context/SessionContext";
+import { useParams } from "next/navigation";
 
 const exampleQuery = [
   "Explain quantum computing in simple terms",
@@ -22,8 +24,11 @@ interface IMessage {
 export default function ChatBox({ messages }: { messages: IMessage[] }) {
   const [chatlog, setChatlog] = useState(messages);
   const [message, setMessage] = useState("");
+  const { sessions, setSessions, currentSession, setCurrentSession } =
+    useSessionContext();
   const messageAreaRef = useRef<null | HTMLTextAreaElement>(null);
   const formRef = useRef<null | HTMLFormElement>(null);
+  const param = useParams();
 
   useEffect(() => {
     if (messageAreaRef.current != null) {
@@ -42,10 +47,14 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
     }
   });
 
+  useEffect(() => {
+    if (currentSession === undefined) {
+      setChatlog([]);
+    }
+  }, [currentSession]);
+
   function handleSend() {
     if (message != "") {
-      let current = new Date();
-
       setChatlog([
         ...chatlog,
         {
@@ -55,6 +64,11 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
         },
       ]);
       setMessage("");
+      if (chatlog.length == 0) {
+        let newId = Math.ceil(Math.random() * 1000) + 3;
+        setSessions([{ id: newId, name: message }, ...sessions]);
+        setCurrentSession(newId.toString());
+      }
     }
   }
 
@@ -68,7 +82,7 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
   return (
     <main className="w-full h-screen flex flex-col items-center justify-between">
       {chatlog.length == 0 && (
-        <div className="w-full h-full flex flex-col space-y-8 justify-center items-center">
+        <div className="scrollbar-hide w-full h-full flex flex-col space-y-8 justify-center items-center">
           <div className="flex flex-col justify-center items-center">
             <div className="relative w-20 h-20 sm:w-40 sm:h-40">
               <Image

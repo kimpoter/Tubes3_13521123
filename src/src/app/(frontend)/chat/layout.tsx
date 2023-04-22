@@ -1,5 +1,8 @@
-import { Navbar } from "./components/Navbar";
-
+import { ISession, SessionContextProvider } from "./context/SessionContext";
+import { SettingsContextProvider } from "./context/SettingsContext";
+import React, { Suspense } from "react";
+import LoadingNavbar from "./components/Navbar/LoadingNavbar";
+import Navbar from "./components/Navbar/Navbar";
 export const metadata = {
   title: "ShibAl - Chat",
   description:
@@ -14,8 +17,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="main-background relative max-h-screen flex flex-row text-slate-400 scrollbar-hide">
-        <Navbar />
-        <div className="w-full px-4">{children}</div>
+        <SettingsContextProvider>
+          <SessionContextProvider>
+            <Suspense fallback={<LoadingNavbar />}>
+              <Navbar />
+            </Suspense>
+            <div className="w-full px-4">{children}</div>
+          </SessionContextProvider>
+        </SettingsContextProvider>
       </body>
     </html>
   );
