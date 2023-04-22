@@ -3,7 +3,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 
-export default function SignInForm() {
+export default function SignUpForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -40,6 +40,7 @@ export default function SignInForm() {
             />
           </div>
         </div>
+
         <div className="flex flex-col mt-4 w-full">
           <label className="text-slate-400 font-bold" htmlFor="password">
             Password
@@ -57,18 +58,35 @@ export default function SignInForm() {
           </div>
         </div>
 
+        <div className="flex flex-col mt-4 w-full">
+          <label className="text-slate-400 font-bold" htmlFor="password">
+            Confirm Password
+          </label>
+          <div className="flex flex-row items-center">
+            <span className="text-orange-400">→</span>
+            <input
+              type="password"
+              name="confirm-password"
+              id="confirm-password"
+              className="w-full text-slate-200 bg-transparent focus:outline-none py-2 px-4"
+              placeholder="confirm password"
+              onChange={(e) => setPassword(e.currentTarget.value)}
+            />
+          </div>
+        </div>
+
         <button
           className="w-full bg-orange-500 bg-opacity-40 rounded-lg my-4 text-slate-200 font-semibold py-2 mt-8"
           type="submit"
         >
-          Sign In
+          Sign Up
         </button>
       </form>
 
       <div className="flex flex-row text-slate-400 gap-2 text-sm mt-4">
-        <p>{"Don't have an account?"}</p>
+        <p>{"Already have an account?"}</p>
         <Link className="text-slate-200 hover:underline" href={"/signup"}>
-          Sign Up →
+          Sign In →
         </Link>
       </div>
     </div>

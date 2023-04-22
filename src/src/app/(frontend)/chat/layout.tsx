@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="main-background relative max-h-screen flex flex-row text-slate-400">
+      <body className="main-background relative max-h-screen flex flex-row text-slate-400 scrollbar-hide">
         <Navbar />
         <div className="w-full px-4">{children}</div>
       </body>

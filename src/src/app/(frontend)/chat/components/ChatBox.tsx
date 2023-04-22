@@ -5,6 +5,7 @@ import { PaperPlaneIcon } from "@radix-ui/react-icons";
 import { useEffect, useRef, useState, KeyboardEvent, Suspense } from "react";
 import { AiChatBubble } from "./ChatBubble/AiChatBubble";
 import { UserChatBubble } from "./ChatBubble/UserChatBubble";
+import { MessageType } from "@prisma/client";
 
 const exampleQuery = [
   "Explain quantum computing in simple terms",
@@ -12,12 +13,14 @@ const exampleQuery = [
   "Kenapa Tugas Besar IF banyak sekali saya lelah mau turu",
 ];
 
-export default function ChatBox({
-  chats,
-}: {
-  chats: { user: boolean; message: string; timestamp: string }[];
-}) {
-  const [chatlog, setChatlog] = useState(chats);
+interface IMessage {
+  id: number;
+  type: MessageType;
+  content: string;
+}
+
+export default function ChatBox({ messages }: { messages: IMessage[] }) {
+  const [chatlog, setChatlog] = useState(messages);
   const [message, setMessage] = useState("");
   const messageAreaRef = useRef<null | HTMLTextAreaElement>(null);
   const formRef = useRef<null | HTMLFormElement>(null);
@@ -46,9 +49,9 @@ export default function ChatBox({
       setChatlog([
         ...chatlog,
         {
-          user: true,
-          message: message,
-          timestamp: current.getDate().toLocaleString(),
+          id: 8214786375,
+          type: MessageType.USER,
+          content: message,
         },
       ]);
       setMessage("");
@@ -105,15 +108,15 @@ export default function ChatBox({
       )}
 
       {chatlog.length > 0 && (
-        <ul id="chat-box" className="w-full overflow-scroll">
+        <ul id="chat-box" className="w-full overflow-scroll scrollbar-hide">
           {chatlog.map((chat) => {
             return (
-              <li key={chat.timestamp}>
-                {chat.user && <UserChatBubble message={chat.message} />}
-                {!chat.user && (
-                  <Suspense fallback={<AiChatBubble message={""} isLoading />}>
-                    <AiChatBubble message={chat.message} />
-                  </Suspense>
+              <li key={chat.id}>
+                {chat.type == MessageType.USER && (
+                  <UserChatBubble message={chat.content} />
+                )}
+                {chat.type == MessageType.SYSTEM && (
+                  <AiChatBubble message={chat.content} />
                 )}
               </li>
             );
