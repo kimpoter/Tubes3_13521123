@@ -1,8 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { PaperPlaneIcon, TokensIcon } from "@radix-ui/react-icons";
-import { useEffect, useRef, useState, KeyboardEvent } from "react";
+import { PaperPlaneIcon } from "@radix-ui/react-icons";
+import { useEffect, useRef, useState, KeyboardEvent, Suspense } from "react";
+import { AiChatBubble } from "./ChatBubble/AiChatBubble";
+import { UserChatBubble } from "./ChatBubble/UserChatBubble";
+import { MessageType } from "@prisma/client";
 
 const exampleQuery = [
   "Explain quantum computing in simple terms",
@@ -10,12 +13,14 @@ const exampleQuery = [
   "Kenapa Tugas Besar IF banyak sekali saya lelah mau turu",
 ];
 
-export default function ChatBox({
-  chats,
-}: {
-  chats: { user: boolean; message: string; timestamp: string }[];
-}) {
-  const [chatlog, setChatlog] = useState(chats);
+interface IMessage {
+  id: number;
+  type: MessageType;
+  content: string;
+}
+
+export default function ChatBox({ messages }: { messages: IMessage[] }) {
+  const [chatlog, setChatlog] = useState(messages);
   const [message, setMessage] = useState("");
   const messageAreaRef = useRef<null | HTMLTextAreaElement>(null);
   const formRef = useRef<null | HTMLFormElement>(null);
@@ -44,9 +49,9 @@ export default function ChatBox({
       setChatlog([
         ...chatlog,
         {
-          user: true,
-          message: message,
-          timestamp: current.getDate().toLocaleString(),
+          id: 8214786375,
+          type: MessageType.USER,
+          content: message,
         },
       ]);
       setMessage("");
@@ -75,7 +80,7 @@ export default function ChatBox({
               80px"
               />
             </div>
-            <h1 className="text-2xl sm:text-4xl font-bold text-center">
+            <h1 className="text-2xl sm:text-4xl font-bold text-center text-slate-200">
               SHIBAl
             </h1>
           </div>
@@ -85,7 +90,7 @@ export default function ChatBox({
               return (
                 <li
                   key={query}
-                  className="w-96 bg-blur px-8 py-4 text-center hover:cursor-pointer hover:bg-opacity-30"
+                  className="w-full sm:w-96 bg-blur px-8 py-4 text-center hover:cursor-pointer hover:bg-opacity-30"
                   onClick={(e) => {
                     e.preventDefault();
                     setMessage(query);
@@ -103,18 +108,16 @@ export default function ChatBox({
       )}
 
       {chatlog.length > 0 && (
-        <ul id="chat-box" className="w-full overflow-scroll">
+        <ul id="chat-box" className="w-full overflow-scroll scrollbar-hide">
           {chatlog.map((chat) => {
             return (
-              <li key={chat.timestamp}>
-                <div className={`chat-bubble ${!chat.user && "bg-blur"}`}>
-                  <div
-                    className={`flex-shrink-0 ${chat.user && "text-slate-950"}`}
-                  >
-                    <TokensIcon style={{ height: "100%", width: 24 }} />
-                  </div>
-                  <p>{chat.message}</p>
-                </div>
+              <li key={chat.id}>
+                {chat.type == MessageType.USER && (
+                  <UserChatBubble message={chat.content} />
+                )}
+                {chat.type == MessageType.SYSTEM && (
+                  <AiChatBubble message={chat.content} />
+                )}
               </li>
             );
           })}
@@ -122,36 +125,40 @@ export default function ChatBox({
         </ul>
       )}
 
-      <div
-        id="chat-input"
-        className="px-0 md:px-24 lg:px-48 py-4 w-full flex flex-row justify-center items-stretch"
-      >
-        <form
-          ref={formRef}
-          className="w-full h-full px-8 py-4 flex flex-row bg-blur space-x-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSend();
-          }}
+      <div className="w-full flex flex-col justify-center items-center pb-4">
+        <div
+          id="chat-input"
+          className="px-0 md:px-24 lg:px-48 py-4 w-full flex flex-row justify-center items-stretch"
         >
-          <textarea
-            rows={1}
-            placeholder="Send a message..."
-            className="w-full resize-none bg-transparent focus:outline-none"
-            value={message}
-            ref={messageAreaRef}
-            onChange={(e) => {
-              setMessage(e.currentTarget.value);
+          <form
+            ref={formRef}
+            className="w-full h-full px-8 py-4 flex flex-row bg-blur space-x-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
             }}
-            onKeyDown={onEnterPress}
-          />
-          <button className="h-full" type="submit">
-            <PaperPlaneIcon
-              className="-rotate-45"
-              style={{ height: "100%", width: 20 }}
+          >
+            <textarea
+              rows={1}
+              placeholder="Send a message..."
+              className="w-full resize-none bg-transparent focus:outline-none"
+              value={message}
+              ref={messageAreaRef}
+              onChange={(e) => {
+                setMessage(e.currentTarget.value);
+              }}
+              onKeyDown={onEnterPress}
             />
-          </button>
-        </form>
+            <button className="h-full" type="submit">
+              <PaperPlaneIcon
+                className="-rotate-45"
+                style={{ height: "100%", width: 20 }}
+              />
+            </button>
+          </form>
+        </div>
+
+        <p className="text-xs text-slate-600">Made by しば-L team</p>
       </div>
     </main>
   );
