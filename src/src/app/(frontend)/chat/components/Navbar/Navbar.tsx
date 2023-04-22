@@ -2,28 +2,21 @@
 import { ChatBubbleIcon, Cross1Icon } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ISession, useSessionContext } from "../../context/SessionContext";
+import { useSessionContext } from "../../context/SessionContext";
 import NavbarLayout from "./NavbarLayout";
 import LoadingNavbar from "./LoadingNavbar";
 import { useRouter } from "next/navigation";
+import { Session } from "@prisma/client";
 
-const dummysession = [
-  {
-    id: 1,
-    name: "Halo, apakah kamu bisa membantu saya dengan masalah komputer saya?",
-  },
-  {
-    id: 2,
-    name: "Halo, apakah kamu bisa membantu saya membuat website?",
-  },
-];
+async function getSessions(): Promise<Session[]> {
+  const res = await fetch("http://localhost:3000/api/sessions");
+  if (res.ok) {
+    const data = await res.json();
 
-function delay(time: number) {
-  return new Promise((resolve) => setTimeout(resolve, time));
-}
+    return data.data;
+  }
 
-async function getSessions(): Promise<ISession[]> {
-  return delay(2000).then(() => dummysession);
+  return [];
 }
 
 export default function Navbar() {
@@ -34,18 +27,22 @@ export default function Navbar() {
 
   useEffect(() => {
     getSessions()
-      .then((value) => {
-        setSessions(value);
+      .then((data) => {
+        console.log(data);
+        setSessions(data);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  function deleteSession() {
-    setSessions(
-      sessions.filter((session) => session.id.toString() != currentSession)
-    );
+  async function deleteSession(id: number) {
+    const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+    setSessions(sessions.filter((session) => session.id != id));
     setCurrentSession(undefined);
     router.push("/chat");
+
+    if (!res.ok) {
+      console.log(await res.json());
+    }
   }
 
   if (loading) {
@@ -55,7 +52,7 @@ export default function Navbar() {
   return (
     <NavbarLayout>
       {(hideSideNavbar) => (
-        <ul className="w-full space-y-4 pt-4">
+        <ul className="w-full flex-grow space-y-4 pt-4 overflow-scroll scrollbar-hide">
           {sessions.map((session) => {
             return (
               <Link
@@ -88,7 +85,7 @@ export default function Navbar() {
                     <button
                       onClick={(e) => {
                         e.preventDefault();
-                        deleteSession();
+                        deleteSession(session.id);
                       }}
                     >
                       <Cross1Icon

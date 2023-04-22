@@ -12,6 +12,7 @@ import { useSessionContext } from "../../context/SessionContext";
 import { useSettingsContext } from "../../context/SettingsContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 
 enum Algorithm {
   KMP,
@@ -34,9 +35,12 @@ function NavbarMenu({ isOpen }: { isOpen: boolean }) {
         <GitHubLogoIcon style={{ width: 16, height: 16 }} />
         <p>See Project</p>
       </Link>
-      <button className="w-full flex flex-row items-center space-x-4 hover:bg-slate-900 py-4 px-3 rounded-lg">
+      <button
+        className="w-full flex flex-row items-center space-x-4 hover:bg-slate-900 py-4 px-3 rounded-lg"
+        onClick={() => signOut()}
+      >
         <ExitIcon style={{ width: 16, height: 16 }} />
-        <p>Log Out</p>
+        <p>Sign Out</p>
       </button>
     </div>
   );
@@ -114,8 +118,8 @@ export default function NavbarLayout({
               />
               <p>New Session</p>
             </button>
-            {children(hideSideNavbar)}
           </div>
+          {children(hideSideNavbar)}
 
           <div className="w-full space-y-2">
             <div className="w-full relative bg-slate-950 font-bold py-1 px-1 flex flex-row justify-between rounded-lg">
@@ -146,10 +150,10 @@ export default function NavbarLayout({
               />
             </div>
 
-            <button
+            <div
               className={`${
                 isOpen && "bg-blur"
-              } relative w-full flex justify-end z-20 py-2`}
+              } relative w-full flex justify-end z-20 py-2 hover:cursor-pointer`}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsOpen(!isOpen);
@@ -159,7 +163,7 @@ export default function NavbarLayout({
                 style={{ width: 20, height: 20, marginRight: "0.5rem" }}
               />
               <NavbarMenu isOpen={isOpen} />
-            </button>
+            </div>
           </div>
         </div>
       </div>

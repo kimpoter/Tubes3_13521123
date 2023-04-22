@@ -1,24 +1,20 @@
 "use client";
 
+import { Session } from "@prisma/client";
 import { useParams } from "next/navigation";
 import React, { createContext, useContext, useState } from "react";
 
-export interface ISession {
-  id: number;
-  name: string;
-}
-
 interface ISessionContext {
-  sessions: ISession[];
+  sessions: Session[];
   currentSession: string | undefined;
-  setSessions: (sessions: ISession[]) => void;
+  setSessions: (sessions: Session[]) => void;
   setCurrentSession: (session: string | undefined) => void;
 }
 
 const SessionContextDefault: ISessionContext = {
   sessions: [],
   currentSession: undefined,
-  setSessions: (sessions: ISession[]) => {},
+  setSessions: (sessions: Session[]) => {},
   setCurrentSession: (session: string | undefined) => {},
 };
 
@@ -30,7 +26,7 @@ export function SessionContextProvider({
   children: React.ReactNode;
 }) {
   const param = useParams();
-  const [sessions, setSessions] = useState<ISession[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSession, setCurrentSession] = useState<undefined | string>(
     param.id
   );

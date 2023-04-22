@@ -52,7 +52,17 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
     }
   }, [currentSession]);
 
-  function handleSend() {
+  async function createSession() {
+    const res = await fetch("http://localhost:3000/api/sessions", {
+      method: "POST",
+    });
+
+    if (res.ok) {
+      console.log("create session", await res.json());
+    }
+  }
+
+  async function handleSend() {
     if (message != "") {
       let newId = Math.ceil(Math.random() * 10000) + 3;
       let newChatLog = [
@@ -67,13 +77,24 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
       setMessage("");
       setIsLoading(true);
 
+      await createSession();
       new Promise((resolve) => {
         setTimeout(resolve, 2000);
       })
         .then(() => {
           if (chatlog.length == 0) {
             let newId = Math.ceil(Math.random() * 1000) + 3;
-            setSessions([{ id: newId, name: message }, ...sessions]);
+            let date = new Date();
+            setSessions([
+              {
+                id: newId,
+                name: message,
+                userId: "",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              ...sessions,
+            ]);
             setCurrentSession(newId.toString());
           }
           let newId = Math.ceil(Math.random() * 10000) + 3;
