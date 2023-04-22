@@ -1,18 +1,45 @@
 "use client";
 import {
+  DotsHorizontalIcon,
   DoubleArrowLeftIcon,
   DoubleArrowRightIcon,
+  ExitIcon,
+  GitHubLogoIcon,
   PlusIcon,
 } from "@radix-ui/react-icons";
 import React, { useRef, useState } from "react";
-import Link from "next/link";
 import { useSessionContext } from "../../context/SessionContext";
 import { useSettingsContext } from "../../context/SettingsContext";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 enum Algorithm {
   KMP,
   BM,
+}
+
+function NavbarMenu({ isOpen }: { isOpen: boolean }) {
+  return (
+    <div
+      className={`absolute bottom-12 ${
+        isOpen
+          ? "translate-y-0 opacity-100 z-50"
+          : "translate-y-[200%] opacity-0 -z-50"
+      } transition-all ease-in-out delay-0 w-full bg-slate-950 py-1 px-1 rounded-lg divide-y divide-slate-800 border-slate-800 border sm:border-none`}
+    >
+      <Link
+        href={"https://github.com/sozyGithub/Tubes3_13521123"}
+        className="w-full flex flex-row items-center space-x-4 hover:bg-slate-900 py-4 px-3 rounded-lg"
+      >
+        <GitHubLogoIcon style={{ width: 16, height: 16 }} />
+        <p>See Project</p>
+      </Link>
+      <button className="w-full flex flex-row items-center space-x-4 hover:bg-slate-900 py-4 px-3 rounded-lg">
+        <ExitIcon style={{ width: 16, height: 16 }} />
+        <p>Log Out</p>
+      </button>
+    </div>
+  );
 }
 
 export default function NavbarLayout({
@@ -26,6 +53,7 @@ export default function NavbarLayout({
   const doubleArrowRightIconRef = useRef<null | HTMLButtonElement>(null);
   const { setCurrentSession } = useSessionContext();
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
 
   function showSideNavbar() {
     setIsSideNavbarExpanded(true);
@@ -36,6 +64,7 @@ export default function NavbarLayout({
 
   function hideSideNavbar() {
     setIsSideNavbarExpanded(false);
+    setIsOpen(false);
     if (doubleArrowRightIconRef.current != null) {
       doubleArrowRightIconRef.current.style.display = "block";
     }
@@ -54,9 +83,13 @@ export default function NavbarLayout({
 
       <div
         ref={sideNavbarRef}
-        className={`lg:block absolute lg:relative w-80 h-screen py-4 pl-4 z-20 transition-all ease-in-out duration-200  ${
+        className={`lg:block absolute lg:relative w-full sm:w-96 h-screen py-4 px-4 sm:pl-4 z-20 transition-all ease-in-out duration-200  ${
           isSideNavbarExpanded ? "translate-x-0 " : "-translate-x-full"
-        } lg:translate-x-0`}
+        } lg:translate-x-0 overflow-y-hidden`}
+        onClick={(e) => {
+          e.preventDefault();
+          setIsOpen(false);
+        }}
       >
         <div className="w-full h-full py-4 px-4 flex flex-col justify-between bg-blur bg-slate-950 lg:bg-slate-400 lg:bg-opacity-10 border-opacity-30 border-l border-t border-l-orange-500 border-t-orange-500 rounded-lg">
           <div className="w-full flex flex-col space-y-4">
@@ -84,32 +117,49 @@ export default function NavbarLayout({
             {children(hideSideNavbar)}
           </div>
 
-          <div className="w-full relative bg-slate-950 font-bold py-1 px-1 flex flex-row justify-between rounded-lg">
-            <button
-              className={`py-2 px-2 rounded-lg w-full z-20 ${
-                algorithm == Algorithm.KMP && "text-slate-200"
-              }`}
-              onClick={() => setAlgorithm(Algorithm.KMP)}
-            >
-              KMP
-            </button>
-            <button
-              className={`py-2 px-2 rounded-lg w-full z-20 ${
-                algorithm == Algorithm.BM && "text-slate-200"
-              }`}
-              onClick={() => setAlgorithm(Algorithm.BM)}
-            >
-              BM
-            </button>
-            <div
-              className={`absolute w-1/2 py-2 px-2 rounded-lg h-[calc(100%-0.5rem)] 
+          <div className="w-full space-y-2">
+            <div className="w-full relative bg-slate-950 font-bold py-1 px-1 flex flex-row justify-between rounded-lg">
+              <button
+                className={`py-2 px-2 rounded-lg w-full z-20 ${
+                  algorithm == Algorithm.KMP && "text-slate-200"
+                }`}
+                onClick={() => setAlgorithm(Algorithm.KMP)}
+              >
+                KMP
+              </button>
+              <button
+                className={`py-2 px-2 rounded-lg w-full z-20 ${
+                  algorithm == Algorithm.BM && "text-slate-200"
+                }`}
+                onClick={() => setAlgorithm(Algorithm.BM)}
+              >
+                BM
+              </button>
+              <div
+                className={`absolute w-1/2 py-2 px-2 rounded-lg h-[calc(100%-0.5rem)] 
                             bg-orange-500 bg-opacity-40 text-slate-200 transition-all ease-in-out duration-200
                             ${
                               algorithm == Algorithm.KMP
                                 ? " translate-x-0"
                                 : " translate-x-[calc(100%-0.5rem)]"
                             }`}
-            ></div>
+              />
+            </div>
+
+            <button
+              className={`${
+                isOpen && "bg-blur"
+              } relative w-full flex justify-end z-20 py-2`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(!isOpen);
+              }}
+            >
+              <DotsHorizontalIcon
+                style={{ width: 20, height: 20, marginRight: "0.5rem" }}
+              />
+              <NavbarMenu isOpen={isOpen} />
+            </button>
           </div>
         </div>
       </div>

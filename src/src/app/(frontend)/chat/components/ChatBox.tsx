@@ -1,13 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { PaperPlaneIcon } from "@radix-ui/react-icons";
+import { PaperPlaneIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { useEffect, useRef, useState, KeyboardEvent, Suspense } from "react";
 import { AiChatBubble } from "./ChatBubble/AiChatBubble";
 import { UserChatBubble } from "./ChatBubble/UserChatBubble";
 import { MessageType } from "@prisma/client";
 import { useSessionContext } from "../context/SessionContext";
-import { useParams } from "next/navigation";
 
 const exampleQuery = [
   "Explain quantum computing in simple terms",
@@ -24,11 +23,11 @@ interface IMessage {
 export default function ChatBox({ messages }: { messages: IMessage[] }) {
   const [chatlog, setChatlog] = useState(messages);
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { sessions, setSessions, currentSession, setCurrentSession } =
     useSessionContext();
   const messageAreaRef = useRef<null | HTMLTextAreaElement>(null);
   const formRef = useRef<null | HTMLFormElement>(null);
-  const param = useParams();
 
   useEffect(() => {
     if (messageAreaRef.current != null) {
@@ -55,20 +54,39 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
 
   function handleSend() {
     if (message != "") {
-      setChatlog([
+      let newId = Math.ceil(Math.random() * 10000) + 3;
+      let newChatLog = [
         ...chatlog,
         {
-          id: 8214786375,
+          id: newId,
           type: MessageType.USER,
           content: message,
         },
-      ]);
+      ];
+      setChatlog(newChatLog);
       setMessage("");
-      if (chatlog.length == 0) {
-        let newId = Math.ceil(Math.random() * 1000) + 3;
-        setSessions([{ id: newId, name: message }, ...sessions]);
-        setCurrentSession(newId.toString());
-      }
+      setIsLoading(true);
+
+      new Promise((resolve) => {
+        setTimeout(resolve, 2000);
+      })
+        .then(() => {
+          if (chatlog.length == 0) {
+            let newId = Math.ceil(Math.random() * 1000) + 3;
+            setSessions([{ id: newId, name: message }, ...sessions]);
+            setCurrentSession(newId.toString());
+          }
+          let newId = Math.ceil(Math.random() * 10000) + 3;
+          setChatlog([
+            ...newChatLog,
+            {
+              id: newId,
+              type: MessageType.SYSTEM,
+              content: newChatLog[newChatLog.length - 1].content,
+            },
+          ]);
+        })
+        .finally(() => setIsLoading(false));
     }
   }
 
@@ -135,6 +153,7 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
               </li>
             );
           })}
+          {isLoading && <AiChatBubble message={""} isLoading />}
           <div id="bottom" />
         </ul>
       )}
@@ -162,12 +181,20 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
                 setMessage(e.currentTarget.value);
               }}
               onKeyDown={onEnterPress}
+              disabled={isLoading}
             />
-            <button className="h-full" type="submit">
-              <PaperPlaneIcon
-                className="-rotate-45"
-                style={{ height: "100%", width: 20 }}
-              />
+            <button className="h-full" type="submit" disabled={isLoading}>
+              {!isLoading ? (
+                <PaperPlaneIcon
+                  className="-rotate-45"
+                  style={{ height: "100%", width: 20 }}
+                />
+              ) : (
+                <ReloadIcon
+                  className="animate-spin"
+                  style={{ height: "100%", width: 20 }}
+                />
+              )}
             </button>
           </form>
         </div>

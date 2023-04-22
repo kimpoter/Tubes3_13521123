@@ -55,7 +55,7 @@ export default function Navbar() {
   return (
     <NavbarLayout>
       {(hideSideNavbar) => (
-        <ul className="w-64 space-y-4 pt-4">
+        <ul className="w-full space-y-4 pt-4">
           {sessions.map((session) => {
             return (
               <Link
@@ -83,9 +83,7 @@ export default function Navbar() {
                       strokeWidth={1}
                     />
                   </div>
-                  <p className="truncate animate-typing w-full flex-grow">
-                    {session.name}
-                  </p>
+                  <p className="truncate w-full flex-grow">{session.name}</p>
                   {currentSession == session.id.toString() && (
                     <button
                       onClick={(e) => {
