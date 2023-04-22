@@ -42,7 +42,7 @@ model User {
 }
 
 model Session {
-  id   BigInt @id @default(autoincrement())
+  id   Int    @id @default(sequence(maxValue: 4294967295))
   name String
 
   // Foreign relationship
@@ -55,7 +55,7 @@ model Session {
 }
 
 model Question {
-  id      BigInt       @id @default(autoincrement())
+  id      Int          @id @default(sequence(maxValue: 4294967295))
   content String       @unique
   type    QuestionType
 
@@ -68,7 +68,7 @@ model Question {
 }
 
 model Answer {
-  id      BigInt @id @default(autoincrement())
+  id      Int    @id @default(sequence(maxValue: 4294967295))
   content String @unique
 
   // Foreign relationships
@@ -79,13 +79,13 @@ model Answer {
 }
 
 model Message {
-  id      BigInt      @id @default(autoincrement())
+  id      Int         @id @default(sequence(maxValue: 4294967295))
   content String
   type    MessageType
 
   // Foreign relationship
   Session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sessionId BigInt
+  sessionId Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -96,16 +96,16 @@ model UserQuestion {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  questionId BigInt
+  questionId Int
 
   @@id([userId, questionId])
 }
 
 model QuestionAnswer {
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  questionId BigInt
+  questionId Int
   answer     Answer   @relation(fields: [answerId], references: [id], onDelete: Cascade)
-  answerId   BigInt
+  answerId   Int
 
   @@id([questionId, answerId])
 }
