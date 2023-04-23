@@ -12,7 +12,7 @@ const dummy = [
 export default function Loading() {
   return (
     <main className="w-full h-screen flex flex-col items-center justify-between">
-      <ul id="chat-box" className="w-full overflow-scroll">
+      <ul id="chat-box" className="w-full overflow-scroll scrollbar-hide">
         {dummy.map((chat) => {
           return (
             <li key={chat.id}>

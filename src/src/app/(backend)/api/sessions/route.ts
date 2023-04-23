@@ -16,8 +16,11 @@ export async function GET(req: Request) {
     where: {
       userId: session?.user.id,
     },
+    orderBy: {
+      createdAt: "desc",
+    }
   });
-
+  
   return NextResponse.json({
     is_success: true,
     message: null,
@@ -33,7 +36,7 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-
+  console.info(session)
   try {
     const result = await prisma.session.create({
       data: {
@@ -45,7 +48,6 @@ export async function POST(req: Request) {
         },
       },
     });
-
     return NextResponse.json({
       is_success: true,
       message: "New Session has been created!",

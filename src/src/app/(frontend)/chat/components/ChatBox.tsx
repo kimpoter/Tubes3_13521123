@@ -1,11 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { PaperPlaneIcon } from "@radix-ui/react-icons";
-import { useEffect, useRef, useState, KeyboardEvent, Suspense } from "react";
+import { PaperPlaneIcon, ReloadIcon } from "@radix-ui/react-icons";
+import { useEffect, useRef, useState, KeyboardEvent } from "react";
 import { AiChatBubble } from "./ChatBubble/AiChatBubble";
 import { UserChatBubble } from "./ChatBubble/UserChatBubble";
-import { MessageType } from "@prisma/client";
+import { Message, MessageType } from "@prisma/client";
+import { useSessionContext } from "../context/SessionContext";
+import Loading from "../loading";
+import { useRouter } from "next/navigation";
 
 const exampleQuery = [
   "Explain quantum computing in simple terms",
@@ -13,17 +16,55 @@ const exampleQuery = [
   "Kenapa Tugas Besar IF banyak sekali saya lelah mau turu",
 ];
 
-interface IMessage {
-  id: number;
-  type: MessageType;
-  content: string;
+const dummy = [
+  { id: 1, type: MessageType.USER, content: "" },
+  { id: 2, type: MessageType.SYSTEM, content: "" },
+  { id: 3, type: MessageType.USER, content: "" },
+  { id: 4, type: MessageType.SYSTEM, content: "" },
+];
+
+async function getMessages(
+  id: string | number | undefined
+): Promise<{ messages: Message[]; cursor: number | null } | null> {
+  const res = await fetch(`http://localhost:3000/api/sessions/${id}?cursor=0`);
+  if (res.ok) {
+    const data = await res.json();
+    console.log(data);
+    return data.data;
+  }
+
+  return null;
 }
 
-export default function ChatBox({ messages }: { messages: IMessage[] }) {
-  const [chatlog, setChatlog] = useState(messages);
+export default function ChatBox() {
+  const { sessions, setSessions, currentSession, setCurrentSession } =
+    useSessionContext();
+  const [chatlog, setChatlog] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
+  const [loadMessages, setLoadMessages] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const messageAreaRef = useRef<null | HTMLTextAreaElement>(null);
   const formRef = useRef<null | HTMLFormElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    console.log(currentSession);
+    if (currentSession === undefined) {
+      setLoadMessages(false);
+      setChatlog([]);
+    } else {
+      setLoadMessages(true);
+      getMessages(currentSession)
+        .then((data) => {
+          if (data) setChatlog(data.messages.reverse());
+          else {
+            router.push("/chat");
+            setChatlog([]);
+          }
+        })
+        .finally(() => setLoadMessages(false));
+    }
+  }, [currentSession, router]);
 
   useEffect(() => {
     if (messageAreaRef.current != null) {
@@ -42,19 +83,81 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
     }
   });
 
-  function handleSend() {
-    if (message != "") {
-      let current = new Date();
+  async function createSession() {
+    const res = await fetch("http://localhost:3000/api/sessions", {
+      method: "POST",
+    });
 
-      setChatlog([
+    if (res.ok) {
+      const data = await res.json();
+
+      return data;
+    }
+
+    return null;
+  }
+
+  async function handleSend() {
+    if (message != "") {
+      //TODO: Integrate question
+      let newId = Math.ceil(Math.random() * 10000) + 3;
+      let newChatLog = [
         ...chatlog,
         {
-          id: 8214786375,
+          id: newId,
           type: MessageType.USER,
           content: message,
+
+          sessionId: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
-      ]);
+      ];
+      setChatlog(newChatLog);
       setMessage("");
+
+      setIsLoading(true);
+
+      new Promise((resolve) => {
+        setTimeout(resolve, 2000); // to simulate long calculation
+      })
+        .then(async () => {
+          if (chatlog.length == 0) {
+            const res = await createSession();
+
+            if (res) {
+              setSessions([
+                {
+                  id: res.data.session_id,
+                  name: message,
+                  userId: "",
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                },
+                ...sessions,
+              ]);
+              setCurrentSession(res.data.session_id.toString());
+            }
+
+            // TODO: throw toast
+          }
+
+          //TODO: Integrate answer
+          let newId = Math.ceil(Math.random() * 10000) + 3;
+          setChatlog([
+            ...newChatLog,
+            {
+              id: newId,
+              type: MessageType.SYSTEM,
+              content: newChatLog[newChatLog.length - 1].content,
+
+              sessionId: 0,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ]);
+        })
+        .finally(() => setIsLoading(false));
     }
   }
 
@@ -65,10 +168,12 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
     }
   }
 
+  if (loadMessages) return <Loading />;
+
   return (
     <main className="w-full h-screen flex flex-col items-center justify-between">
       {chatlog.length == 0 && (
-        <div className="w-full h-full flex flex-col space-y-8 justify-center items-center">
+        <div className="scrollbar-hide w-full h-full flex flex-col space-y-8 justify-center items-center">
           <div className="flex flex-col justify-center items-center">
             <div className="relative w-20 h-20 sm:w-40 sm:h-40">
               <Image
@@ -121,6 +226,7 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
               </li>
             );
           })}
+          {isLoading && <AiChatBubble message={""} isLoading />}
           <div id="bottom" />
         </ul>
       )}
@@ -148,12 +254,20 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
                 setMessage(e.currentTarget.value);
               }}
               onKeyDown={onEnterPress}
+              disabled={isLoading}
             />
-            <button className="h-full" type="submit">
-              <PaperPlaneIcon
-                className="-rotate-45"
-                style={{ height: "100%", width: 20 }}
-              />
+            <button className="h-full" type="submit" disabled={isLoading}>
+              {!isLoading ? (
+                <PaperPlaneIcon
+                  className="-rotate-45"
+                  style={{ height: "100%", width: 20 }}
+                />
+              ) : (
+                <ReloadIcon
+                  className="animate-spin"
+                  style={{ height: "100%", width: 20 }}
+                />
+              )}
             </button>
           </form>
         </div>

@@ -14,6 +14,7 @@ module.exports = {
       },
       animation: {
         "spin-slow": "spin 10s linear infinite",
+        typing: "typing 2s steps(20) infinite alternate, blink .7s infinite",
       },
     },
   },
