@@ -17,7 +17,7 @@ export async function GET(
     params: { sessionId: string };
   }
 ) {
-  const DEFAULT_TAKE_AMOUNT = 15;
+  const DEFAULT_TAKE_AMOUNT = 20;
   const searchParams = new URL(req.url).searchParams;
 
   const sessionId = Number(params.sessionId);
@@ -63,14 +63,7 @@ export async function GET(
  * @param req  Request
  * @returns -
  */
-export async function DELETE(
-  req: Request,
-  {
-    params,
-  }: {
-    params: { sessionId: string };
-  }
-) {
+export async function DELETE({ params }: { params: { sessionId: string } }) {
   const sessionId = Number(params.sessionId);
   if (isNaN(sessionId)) {
     return new NextResponse("Invalid URL params", {
@@ -94,13 +87,13 @@ export async function DELETE(
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2025") {
         return new NextResponse("Session not found", {
-          status: 400,
+          status: StatusCode.ClientErrorBadRequest,
         });
       }
     }
 
     return new NextResponse(String(error), {
-      status: 500,
+      status: StatusCode.ServerErrorInternal,
     });
   }
 }
