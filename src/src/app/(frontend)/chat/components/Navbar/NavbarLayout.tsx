@@ -14,11 +14,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 
-enum Algorithm {
-  KMP,
-  BM,
-}
-
 function NavbarMenu({ isOpen }: { isOpen: boolean }) {
   return (
     <div
@@ -125,17 +120,17 @@ export default function NavbarLayout({
             <div className="w-full relative bg-slate-950 font-bold py-1 px-1 flex flex-row justify-between rounded-lg">
               <button
                 className={`py-2 px-2 rounded-lg w-full z-20 ${
-                  algorithm == Algorithm.KMP && "text-slate-200"
+                  algorithm == "KMP" && "text-slate-200"
                 }`}
-                onClick={() => setAlgorithm(Algorithm.KMP)}
+                onClick={() => setAlgorithm("KMP")}
               >
                 KMP
               </button>
               <button
                 className={`py-2 px-2 rounded-lg w-full z-20 ${
-                  algorithm == Algorithm.BM && "text-slate-200"
+                  algorithm == "BM" && "text-slate-200"
                 }`}
-                onClick={() => setAlgorithm(Algorithm.BM)}
+                onClick={() => setAlgorithm("BM")}
               >
                 BM
               </button>
@@ -143,7 +138,7 @@ export default function NavbarLayout({
                 className={`absolute w-1/2 py-2 px-2 rounded-lg h-[calc(100%-0.5rem)] 
                             bg-orange-500 bg-opacity-40 text-slate-200 transition-all ease-in-out duration-200
                             ${
-                              algorithm == Algorithm.KMP
+                              algorithm == "KMP"
                                 ? " translate-x-0"
                                 : " translate-x-[calc(100%-0.5rem)]"
                             }`}

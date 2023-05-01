@@ -5,22 +5,17 @@ import { PaperPlaneIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { useEffect, useRef, useState, KeyboardEvent } from "react";
 import { AiChatBubble } from "./ChatBubble/AiChatBubble";
 import { UserChatBubble } from "./ChatBubble/UserChatBubble";
-import { Message, MessageType } from "@prisma/client";
+import { MessageType } from "@prisma/client";
 import { useSessionContext } from "../context/SessionContext";
 import Loading from "../loading";
 import { useRouter } from "next/navigation";
+import { MessageRequestBody } from "@/lib/interfaces";
+import { useSettingsContext } from "../context/SettingsContext";
 
 const exampleQuery = [
   "Explain quantum computing in simple terms",
   "Who is the best girl in Oshi no Ko and why is it Akane",
   "Kenapa Tugas Besar IF banyak sekali saya lelah mau turu",
-];
-
-const dummy = [
-  { id: 1, type: MessageType.USER, content: "" },
-  { id: 2, type: MessageType.SYSTEM, content: "" },
-  { id: 3, type: MessageType.USER, content: "" },
-  { id: 4, type: MessageType.SYSTEM, content: "" },
 ];
 
 async function getMessages(
@@ -36,9 +31,43 @@ async function getMessages(
   return null;
 }
 
+async function sendQuestion(body: MessageRequestBody) {
+  const res = await fetch(`http://localhost:3000/api/message`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    return data.data;
+  }
+
+  return null;
+}
+
+async function createSession() {
+  const res = await fetch("http://localhost:3000/api/sessions", {
+    method: "POST",
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+
+    return data;
+  }
+
+  return null;
+}
+
+interface Message {
+  id: number;
+  content: string;
+  type: MessageType;
+}
+
 export default function ChatBox() {
   const { sessions, setSessions, currentSession, setCurrentSession } =
     useSessionContext();
+  const { algorithm } = useSettingsContext();
   const [chatlog, setChatlog] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
   const [loadMessages, setLoadMessages] = useState(true);
@@ -52,6 +81,7 @@ export default function ChatBox() {
     if (currentSession === undefined) {
       setLoadMessages(false);
       setChatlog([]);
+      setCurrentSession("new");
     } else {
       setLoadMessages(true);
       getMessages(currentSession)
@@ -64,7 +94,7 @@ export default function ChatBox() {
         })
         .finally(() => setLoadMessages(false));
     }
-  }, [currentSession, router]);
+  }, [currentSession, router, setCurrentSession]);
 
   useEffect(() => {
     if (messageAreaRef.current != null) {
@@ -83,20 +113,6 @@ export default function ChatBox() {
     }
   });
 
-  async function createSession() {
-    const res = await fetch("http://localhost:3000/api/sessions", {
-      method: "POST",
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-
-      return data;
-    }
-
-    return null;
-  }
-
   async function handleSend() {
     if (message != "") {
       //TODO: Integrate question
@@ -107,57 +123,44 @@ export default function ChatBox() {
           id: newId,
           type: MessageType.USER,
           content: message,
-
-          sessionId: 0,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
       ];
       setChatlog(newChatLog);
       setMessage("");
-
       setIsLoading(true);
 
-      new Promise((resolve) => {
-        setTimeout(resolve, 2000); // to simulate long calculation
-      })
-        .then(async () => {
-          if (chatlog.length == 0) {
-            const res = await createSession();
+      if (chatlog.length == 0) {
+        const res = await createSession();
 
-            if (res) {
-              setSessions([
-                {
-                  id: res.data.session_id,
-                  name: message,
-                  userId: "",
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                },
-                ...sessions,
-              ]);
-              setCurrentSession(res.data.session_id.toString());
-            }
-
-            // TODO: throw toast
-          }
-
-          //TODO: Integrate answer
-          let newId = Math.ceil(Math.random() * 10000) + 3;
-          setChatlog([
-            ...newChatLog,
+        if (res) {
+          setSessions([
             {
-              id: newId,
-              type: MessageType.SYSTEM,
-              content: newChatLog[newChatLog.length - 1].content,
-
-              sessionId: 0,
+              id: res.data.session_id,
+              name: message,
+              userId: "",
               createdAt: new Date(),
               updatedAt: new Date(),
             },
+            ...sessions,
+          ]);
+        }
+      }
+
+      sendQuestion({ choice: algorithm, question: message })
+        .then((res) => {
+          console.log(res);
+          setChatlog([
+            ...newChatLog,
+            {
+              id: res.id,
+              type: MessageType.SYSTEM,
+              content: res.content,
+            },
           ]);
         })
-        .finally(() => setIsLoading(false));
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
   }
 
@@ -255,6 +258,7 @@ export default function ChatBox() {
               }}
               onKeyDown={onEnterPress}
               disabled={isLoading}
+              autoFocus
             />
             <button className="h-full" type="submit" disabled={isLoading}>
               {!isLoading ? (
