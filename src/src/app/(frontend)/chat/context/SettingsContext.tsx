@@ -2,19 +2,14 @@
 
 import React, { createContext, useContext, useState } from "react";
 
-export enum Algorithm {
-  KMP,
-  BM,
-}
-
 interface ISettingsContext {
-  algorithm: Algorithm;
-  setAlgorithm: (algorithm: Algorithm) => void;
+  algorithm: "KMP" | "BM";
+  setAlgorithm: (algorithm: "KMP" | "BM") => void;
 }
 
 const SettingsContextDefault: ISettingsContext = {
-  algorithm: Algorithm.KMP,
-  setAlgorithm: (algorithm: Algorithm) => {},
+  algorithm: "KMP",
+  setAlgorithm: (algorithm: "KMP" | "BM") => {},
 };
 
 const SettingsContext = createContext(SettingsContextDefault);
@@ -24,7 +19,7 @@ export function SettingsContextProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [algorithm, setAlgorithm] = useState<Algorithm>(Algorithm.KMP);
+  const [algorithm, setAlgorithm] = useState<"KMP" | "BM">("KMP");
 
   return (
     <SettingsContext.Provider value={{ algorithm, setAlgorithm }}>

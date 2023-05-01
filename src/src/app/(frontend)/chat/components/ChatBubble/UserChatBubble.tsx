@@ -15,8 +15,8 @@ export function UserChatBubble({
 
       {isLoading && (
         <div className="w-full flex flex-col space-y-3">
-          <div className="w-full bg-blur h-4 animate-pulse" />
-          <div className="w-2/3 bg-blur h-4 animate-pulse" />
+          <div className="w-full bg-blur h-3 animate-pulse" />
+          <div className="w-2/3 bg-blur h-3 animate-pulse" />
         </div>
       )}
 
