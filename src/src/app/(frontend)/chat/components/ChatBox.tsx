@@ -5,7 +5,7 @@ import { PaperPlaneIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { useEffect, useRef, useState, KeyboardEvent } from "react";
 import { AiChatBubble } from "./ChatBubble/AiChatBubble";
 import { UserChatBubble } from "./ChatBubble/UserChatBubble";
-import { MessageType } from "@prisma/client";
+import { Message, MessageType } from "@prisma/client";
 import { useSessionContext } from "../context/SessionContext";
 import Loading from "../loading";
 import { useRouter } from "next/navigation";
@@ -58,12 +58,6 @@ async function createSession() {
   return null;
 }
 
-interface Message {
-  id: number;
-  content: string;
-  type: MessageType;
-}
-
 export default function ChatBox() {
   const { sessions, setSessions, currentSession, setCurrentSession } =
     useSessionContext();
@@ -86,7 +80,7 @@ export default function ChatBox() {
       setLoadMessages(true);
       getMessages(currentSession)
         .then((data) => {
-          if (data) setChatlog(data.messages.reverse());
+          if (data) setChatlog(data.messages);
           else {
             router.push("/chat");
             setChatlog([]);
@@ -116,47 +110,48 @@ export default function ChatBox() {
   async function handleSend() {
     if (message != "") {
       //TODO: Integrate question
+      let sessionId: string | undefined = undefined;
+      if (chatlog.length > 0) {
+        sessionId = chatlog[chatlog.length - 1].sessionId.toString();
+      }
+      console.log("session id", currentSession);
       let newId = Math.ceil(Math.random() * 10000) + 3;
-      let newChatLog = [
+      let newChatLog: Message[] = [
         ...chatlog,
         {
           id: newId,
           type: MessageType.USER,
           content: message,
+
+          sessionId: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ];
       setChatlog(newChatLog);
       setMessage("");
       setIsLoading(true);
 
-      if (chatlog.length == 0) {
-        const res = await createSession();
-
-        if (res) {
-          setSessions([
-            {
-              id: res.data.session_id,
-              name: message,
-              userId: "",
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-            ...sessions,
-          ]);
-        }
-      }
-
-      sendQuestion({ choice: algorithm, question: message })
+      sendQuestion({
+        choice: algorithm,
+        question: message,
+        sessionId: sessionId == undefined ? undefined : parseInt(sessionId),
+      })
         .then((res) => {
           console.log(res);
-          setChatlog([
-            ...newChatLog,
-            {
-              id: res.id,
-              type: MessageType.SYSTEM,
-              content: res.content,
-            },
-          ]);
+          setChatlog([...newChatLog, res]);
+          if (sessionId == undefined) {
+            setSessions([
+              {
+                id: res.sessionId,
+                name: message,
+                userId: "",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              ...sessions,
+            ]);
+          }
         })
         .finally(() => {
           setIsLoading(false);

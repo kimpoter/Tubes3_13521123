@@ -2,7 +2,11 @@ import { bmMatch } from "@/lib/bm";
 import { MessageRequestBody } from "@/lib/interfaces";
 import { kmpMatch } from "@/lib/kmp";
 import { levenshtein } from "@/lib/levenshtein";
+import prisma from "@/lib/prisma";
+import { MessageType } from "@prisma/client";
+import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 const regex = {
   calcRegex: /^\s*([-+]?(\d*\.\d+|\d+))(\s*((\+|\-|\*|\/|\*\*|\^|\%))\s*([-+]?(\d*\.\d+|\d+)))*\s*\??\s*$/,
@@ -10,6 +14,22 @@ const regex = {
   tambahRegex: /^tambahkan pertanyaan (\w+) dengan jawaban (\w+)$/,
   hapusRegex: /^hapus pertanyaan (\w+)$/u,
 };
+
+async function createSession(name:string) {
+  const session = await getServerSession(authOptions);
+  console.info(session)
+    const result = await prisma.session.create({
+      data: {
+        name: name,
+        user: {
+          connect: {
+            id: session?.user.id,
+          },
+        },
+      },
+    });
+    return result.id
+}
 
 /**
  * /api/message
@@ -20,7 +40,19 @@ const regex = {
  */
 export async function POST(req: Request) {
   try {
-    let { choice, question }: MessageRequestBody = await req.json();
+    let { choice, question, sessionId }: MessageRequestBody = await req.json();
+    console.info("session id (server)", sessionId)
+    if (sessionId == undefined) {
+      sessionId = await createSession(question);
+    }
+
+    await prisma.message.create({
+      data: {
+        content: question,
+        type: MessageType.USER,
+        sessionId: sessionId
+      }
+    })
 
     question = question.replace(/\b0+(\d+)/g, '$1'); // replace digits with 0 prefix 
     console.info(question);
@@ -77,14 +109,20 @@ export async function POST(req: Request) {
         }
       }
     }
-    return NextResponse.json({
-      is_success: true,
-      message: null,
-      data: {
-        id: Math.ceil(Math.random() * 10000) + 3, // change to the new message id
-        content: result,
-      }
-    });
+
+  const res = await prisma.message.create({
+    data: {
+      content: result,
+      type: MessageType.SYSTEM,
+      sessionId: sessionId
+    }
+  })
+  console.info(res);
+  return NextResponse.json({
+    is_success: true,
+    message: null,
+    data: res
+  });
   } catch (err) {
     console.log(err);
     return NextResponse.json({ error: err });

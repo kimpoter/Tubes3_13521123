@@ -39,11 +39,6 @@ export async function GET(
   const result = await prisma.message.findMany({
     take,
     ...(cursor && { cursor: { id: cursor }, skip: 1 }),
-    select: {
-      id: true,
-      type: true,
-      content: true,
-    },
     where: {
       sessionId,
     },
