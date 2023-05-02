@@ -17,7 +17,7 @@ export async function GET(
     params: { sessionId: string };
   }
 ) {
-  const DEFAULT_TAKE_AMOUNT = 15;
+  const DEFAULT_TAKE_AMOUNT = 999999;
   const searchParams = new URL(req.url).searchParams;
 
   const sessionId = Number(params.sessionId);
@@ -43,7 +43,7 @@ export async function GET(
       sessionId,
     },
     orderBy: {
-      createdAt: "asc",
+      createdAt: "desc",
     },
   });
 
