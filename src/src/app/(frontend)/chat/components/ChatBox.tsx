@@ -19,9 +19,12 @@ const exampleQuery = [
 ];
 
 async function getMessages(
-  id: string | number | undefined
+  id: string | number | undefined,
+  cursor: number = 0
 ): Promise<{ messages: Message[]; cursor: number | null } | null> {
-  const res = await fetch(`http://localhost:3000/api/sessions/${id}?cursor=0`);
+  const res = await fetch(
+    `http://localhost:3000/api/sessions/${id}?cursor=${cursor}`
+  );
   if (res.ok) {
     const data = await res.json();
     console.log(data);
@@ -40,23 +43,22 @@ async function sendQuestion(body: MessageRequestBody) {
     const data = await res.json();
     return data.data;
   }
-
   return null;
 }
 
-async function createSession() {
-  const res = await fetch("http://localhost:3000/api/sessions", {
-    method: "POST",
-  });
+// async function createSession() {
+//   const res = await fetch("http://localhost:3000/api/sessions", {
+//     method: "POST",
+//   });
 
-  if (res.ok) {
-    const data = await res.json();
+//   if (res.ok) {
+//     const data = await res.json();
 
-    return data;
-  }
+//     return data;
+//   }
 
-  return null;
-}
+//   return null;
+// }
 
 export default function ChatBox() {
   const { sessions, setSessions, currentSession, setCurrentSession } =
@@ -75,20 +77,20 @@ export default function ChatBox() {
     if (currentSession === undefined) {
       setLoadMessages(false);
       setChatlog([]);
-      setCurrentSession("new");
     } else {
       setLoadMessages(true);
       getMessages(currentSession)
         .then((data) => {
-          if (data) setChatlog(data.messages);
-          else {
+          if (data) {
+            if (data.messages.length == 0) router.push("/chat");
+            setChatlog(data.messages.reverse());
+          } else {
             router.push("/chat");
-            setChatlog([]);
           }
         })
         .finally(() => setLoadMessages(false));
     }
-  }, [currentSession, router, setCurrentSession]);
+  }, []);
 
   useEffect(() => {
     if (messageAreaRef.current != null) {
@@ -114,7 +116,6 @@ export default function ChatBox() {
       if (chatlog.length > 0) {
         sessionId = chatlog[chatlog.length - 1].sessionId.toString();
       }
-      console.log("session id", currentSession);
       let newId = Math.ceil(Math.random() * 10000) + 3;
       let newChatLog: Message[] = [
         ...chatlog,
@@ -151,6 +152,7 @@ export default function ChatBox() {
               },
               ...sessions,
             ]);
+            setCurrentSession(res.sessionId);
           }
         })
         .finally(() => {
@@ -211,8 +213,11 @@ export default function ChatBox() {
       )}
 
       {chatlog.length > 0 && (
-        <ul id="chat-box" className="w-full overflow-scroll scrollbar-hide">
-          {chatlog.map((chat) => {
+        <ul
+          id="chat-box"
+          className="w-full overflow-scroll scrollbar-hide pt-8"
+        >
+          {chatlog.map((chat, index) => {
             return (
               <li key={chat.id}>
                 {chat.type == MessageType.USER && (

@@ -7,11 +7,14 @@ import { MessageType } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { evaluate } from "@/lib/calculator";
 
 const regex = {
-  calcRegex: /^\s*([-+]?(\d*\.\d+|\d+))(\s*((\+|\-|\*|\/|\*\*|\^|\%))\s*([-+]?(\d*\.\d+|\d+)))*\s*\??\s*$/,
+  exprRegex: /^\s*\(*([-+]?(\d*\.\d+|\d+))(\s*((\+|\-|\*|\/|\^|\%))\s*\(*([-+]?(\d*\.\d+|\d+))\)*)*\s*\??\s*$/,
+  calcQuestionRegex: /^\s*kalkulasi\s*(.*)$/i,
   dateRegex: /^\s*(0?[1-9]|[1-2][0-9]|3[0-1])\s*\/\s*(0?[1-9]|1[0-2])\s*\/\s*([0-9]{4})\s*\??\s*$/,
-  tambahRegex: /^tambahkan pertanyaan (\w+) dengan jawaban (\w+)$/,
+  dateQuestionRegex: /^\s*hari apa\s*(.*)$/i,
+  tambahRegex: /^tambahkan pertanyaan (\w+) dengan jawaban (\w+)$/i,
   hapusRegex: /^hapus pertanyaan (\w+)$/u,
 };
 
@@ -29,6 +32,93 @@ async function createSession(name:string) {
       },
     });
     return result.id
+}
+
+function calculate(expression: string) {
+  if (regex.exprRegex.test(expression)) {
+    expression = expression.replace("?", "").toString()
+                       .replaceAll(" ", "").toString()
+                       .replaceAll("\n", "").toString()
+    try {
+      return "Jawabannya adalah " + evaluate(expression);
+    } catch (err) {
+      if (err instanceof Error) {
+        return "Sintaks persamaan tidak sesuai. " + err.message;
+      } else {
+        return "Sintaks persamaan tidak sesuai."
+      }
+    }
+  } else {
+    return "Sintaks persamaan tidak sesuai."
+  }
+}
+
+function getResult(question: string, choice: "KMP" | "BM") {
+  const dateQuestionMatches = question.match(regex.dateQuestionRegex);
+  const calcQuestionMatches = question.match(regex.calcQuestionRegex);
+  const tambahMatches = question.match(regex.tambahRegex);
+  const hapusMatches = question.match(regex.hapusRegex);
+  
+  let result;
+  if (dateQuestionMatches) {
+    let dateString = dateQuestionMatches[1];
+    if (regex.exprRegex.test(dateString)) {
+      dateString = dateString.replaceAll(" ", "").toString()
+                         .replace("?", "").toString()
+                         .replace("hariapa", "");
+      const dateParts = dateString.split("/");
+      const year = parseInt(dateParts[2]);
+      const month = parseInt(dateParts[1]) - 1; // month is zero-indexed
+      const day = parseInt(dateParts[0]);
+  
+      const dayOfWeek = new Date(year, month, day).toLocaleDateString("id-ID", {
+        weekday: "long",
+      });
+  
+      result = "Tanggal tersebut hari " + dayOfWeek;
+    } else {
+      result = "Format atau tanggal tidak valid"
+    }
+  } else {
+    if (calcQuestionMatches) {
+      let expression = calcQuestionMatches[1];
+      result = calculate(expression);
+    } else if (regex.exprRegex.test(question)) {
+      result = calculate(question);
+    }
+    else if (tambahMatches) {
+      // TODO TAMBAH DB
+      let questionTambah = tambahMatches[1];
+      let answerTambah = tambahMatches[2];
+      result = "Mau tambah " + questionTambah + " jawab " + answerTambah;
+    } else if (hapusMatches) {
+      // TODO HAPUS DB
+      let questionHapus = hapusMatches[1];
+      result = "Mau hapus " + questionHapus;
+    } else {
+      let exactMatch;
+      // TODO LOOP OVER EACH QUESTION IN DB, set result
+      if (choice == "KMP") {
+        exactMatch = kmpMatch(question, "tes");
+      } else {
+        exactMatch = bmMatch(question, "tes");
+      }
+
+      if (exactMatch) {
+        result = "HASILNYA JAWABAN DB";
+      } else {
+        // TODO GET APPROXIMATE ANSWER (mirip > 90%)
+        const kemiripan: number = levenshtein("s_pattern", "s_target");
+        if (kemiripan > 0.9) {
+          result = "HASIL JAWABAN DB";
+        } else {
+          result = "REKOMENDASI PERTANYAAN DB TOP 3 YG PALING MIRIP";
+        }
+      }
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -56,63 +146,18 @@ export async function POST(req: Request) {
 
     question = question.replace(/\b0+(\d+)/g, '$1'); // replace digits with 0 prefix 
     console.info(question);
-    
-    const tambahMatches = question.match(regex.tambahRegex);
-    const hapusMatches = question.match(regex.hapusRegex);
-    
-    let result;
-    if (regex.dateRegex.test(question)) {
-      question = question.replaceAll(" ", "").toString();
-      question = question.replaceAll("?", "").toString();
-      const dateParts = question.split("/");
-      const year = parseInt(dateParts[2]);
-      const month = parseInt(dateParts[1]) - 1; // month is zero-indexed
-      const day = parseInt(dateParts[0]);
+    const listQuestion = question.split(/\?(?=\s)/);
+    const listResult = [];
 
-      const dayOfWeek = new Date(year, month, day).toLocaleDateString("id-ID", {
-        weekday: "long",
-      });
-
-      result = "Tanggal tersebut hari " + dayOfWeek;
-    } else {
-      if (regex.calcRegex.test(question)) {
-        question = question.replaceAll("?", "").toString();
-        result = "Jawabannya adalah " + eval(question);
-      } else if (tambahMatches) {
-        // TODO TAMBAH DB
-        let questionTambah = tambahMatches[1];
-        let answerTambah = tambahMatches[2];
-        result = "Mau tambah " + questionTambah + " jawab " + answerTambah;
-      } else if (hapusMatches) {
-        // TODO HAPUS DB
-        let questionHapus = hapusMatches[1];
-        result = "Mau hapus " + questionHapus;
-      } else {
-        let exactMatch;
-        // TODO LOOP OVER EACH QUESTION IN DB, set result
-        if (choice == "KMP") {
-          exactMatch = kmpMatch(question, "tes");
-        } else {
-          exactMatch = bmMatch(question, "tes");
-        }
-  
-        if (exactMatch) {
-          result = "HASILNYA JAWABAN DB";
-        } else {
-          // TODO GET APPROXIMATE ANSWER (mirip > 90%)
-          const kemiripan: number = levenshtein("s_pattern", "s_target");
-          if (kemiripan > 0.9) {
-            result = "HASIL JAWABAN DB";
-          } else {
-            result = "REKOMENDASI PERTANYAAN DB TOP 3 YG PALING MIRIP";
-          }
-        }
-      }
+    console.info(listQuestion)
+    
+    for (const question of listQuestion) {
+      listResult.push(getResult(question, choice));
     }
 
-  const res = await prisma.message.create({
+   const res = await prisma.message.create({
     data: {
-      content: result,
+      content: listResult.join(". "),
       type: MessageType.SYSTEM,
       sessionId: sessionId
     }

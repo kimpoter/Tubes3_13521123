@@ -50,7 +50,7 @@ export default function NavbarLayout({
   const [isSideNavbarExpanded, setIsSideNavbarExpanded] = useState(false);
   const sideNavbarRef = useRef<null | HTMLDivElement>(null);
   const doubleArrowRightIconRef = useRef<null | HTMLButtonElement>(null);
-  const { setCurrentSession } = useSessionContext();
+  const { currentSession, setCurrentSession } = useSessionContext();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -102,8 +102,12 @@ export default function NavbarLayout({
               className="w-full font-bold bg-slate-950 py-4 px-4 rounded-lg flex flex-row items-center space-x-4"
               onClick={() => {
                 hideSideNavbar();
-                setCurrentSession(undefined);
-                router.push("/chat");
+                if (currentSession != undefined) {
+                  router.push(
+                    `/chat/new chat ${Math.ceil(Math.random() * 1000 + 1)}`
+                  );
+                  setCurrentSession(undefined);
+                }
               }}
             >
               <PlusIcon
