@@ -27,7 +27,7 @@ export default function SignUpForm() {
             } else {
                 throw Error();
             }
-        } catch (err) {
+        } catch (err: any) {
             console.log(err.message);
             alert(err.message);
         }
