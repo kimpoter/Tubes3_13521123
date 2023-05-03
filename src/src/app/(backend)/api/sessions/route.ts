@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { NextResponse } from "next/server";
+import StatusCode from "status-code-enum";
 
 /**
  * /api/sessions
@@ -18,9 +19,9 @@ export async function GET(req: Request) {
     },
     orderBy: {
       createdAt: "desc",
-    }
+    },
   });
-  
+
   return NextResponse.json({
     is_success: true,
     message: null,
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  console.info(session)
+  console.info(session);
   try {
     const result = await prisma.session.create({
       data: {
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     return new NextResponse(String(error), {
-      status: 500,
+      status: StatusCode.ServerErrorInternal,
     });
   }
 }
