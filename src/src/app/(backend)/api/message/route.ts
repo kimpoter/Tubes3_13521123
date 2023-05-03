@@ -166,7 +166,8 @@ async function getResult(question: string, choice: "KMP" | "BM") {
                 } else {
                     const kemiripan: number = levenshtein(question, questionDB);
                     similarityScores.push({
-                        string: answerDB,
+                        ques: questionDB,
+                        ans: answerDB,
                         score: kemiripan,
                     });
                 }
@@ -180,12 +181,12 @@ async function getResult(question: string, choice: "KMP" | "BM") {
                         "Jawaban ini " +
                         similarityScores[0].score +
                         " mirip :" +
-                        similarityScores[0].string;
+                        similarityScores[0].ans;
                 } else {
                     result = "Apakah pertanyaan yang anda maksud ini? \n";
                     result += similarityScores
                         .slice(0, 3)
-                        .map((obj) => obj.score + " : " + obj.string)
+                        .map((obj) => Math.round(obj.score) + " : " + obj.ques)
                         .join("\n");
                 }
             }
