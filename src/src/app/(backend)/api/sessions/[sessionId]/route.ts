@@ -17,7 +17,7 @@ export async function GET(
     params: { sessionId: string };
   }
 ) {
-  const DEFAULT_TAKE_AMOUNT = 999999;
+  const DEFAULT_TAKE_AMOUNT = 30;
   const searchParams = new URL(req.url).searchParams;
 
   const sessionId = Number(params.sessionId);
@@ -94,13 +94,13 @@ export async function DELETE(
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2025") {
         return new NextResponse("Session not found", {
-          status: 400,
+          status: StatusCode.ClientErrorBadRequest,
         });
       }
     }
 
     return new NextResponse(String(error), {
-      status: 500,
+      status: StatusCode.ServerErrorInternal,
     });
   }
 }

@@ -85,7 +85,7 @@ export default function SignUpForm() {
 
       <div className="flex flex-row text-slate-400 gap-2 text-sm mt-4">
         <p>{"Already have an account?"}</p>
-        <Link className="text-slate-200 hover:underline" href={"/signup"}>
+        <Link className="text-slate-200 hover:underline" href={"/signin"}>
           Sign In →
         </Link>
       </div>
