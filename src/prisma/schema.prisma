@@ -6,8 +6,10 @@ generator client {
 }
 
 datasource db {
-  provider = "cockroachdb"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl         = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING") // used for migrations
 }
 
 // Enums
@@ -42,7 +44,7 @@ model User {
 }
 
 model Session {
-  id   Int    @id @default(sequence(maxValue: 4294967295))
+  id   Int    @id @default(autoincrement())
   name String
 
   // Foreign relationship
@@ -55,7 +57,7 @@ model Session {
 }
 
 model Question {
-  id      Int          @id @default(sequence(maxValue: 4294967295))
+  id      Int          @id @default(autoincrement())
   content String       @unique
   type    QuestionType
 
@@ -68,7 +70,7 @@ model Question {
 }
 
 model Answer {
-  id      Int    @id @default(sequence(maxValue: 4294967295))
+  id      Int    @id @default(autoincrement())
   content String @unique
 
   // Foreign relationships
@@ -79,7 +81,7 @@ model Answer {
 }
 
 model Message {
-  id      Int         @id @default(sequence(maxValue: 4294967295))
+  id      Int         @id @default(autoincrement())
   content String
   type    MessageType
 
