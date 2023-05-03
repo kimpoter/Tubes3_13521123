@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { Session } from "@prisma/client";
 
 async function getSessions(): Promise<Session[]> {
-  const res = await fetch("http://localhost:3000/api/sessions");
+  const res = await fetch(`/api/sessions`);
   if (res.ok) {
     const data = await res.json();
 

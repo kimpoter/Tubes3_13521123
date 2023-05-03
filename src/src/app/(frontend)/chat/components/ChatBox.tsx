@@ -22,9 +22,7 @@ async function getMessages(
   id: string | number | undefined,
   cursor: number = 0
 ): Promise<{ messages: Message[]; cursor: number | null } | null> {
-  const res = await fetch(
-    `http://localhost:3000/api/sessions/${id}?cursor=${cursor}`
-  );
+  const res = await fetch(`/api/sessions/${id}?cursor=${cursor}`);
   if (res.ok) {
     const data = await res.json();
     console.log(data);
@@ -35,7 +33,7 @@ async function getMessages(
 }
 
 async function sendQuestion(body: MessageRequestBody) {
-  const res = await fetch(`http://localhost:3000/api/message`, {
+  const res = await fetch(`/api/message`, {
     method: "POST",
     body: JSON.stringify(body),
   });
