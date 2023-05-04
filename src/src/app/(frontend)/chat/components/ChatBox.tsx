@@ -150,7 +150,7 @@ export default function ChatBox() {
       setIsLoading(true);
       sendQuestion({
         choice: algorithm,
-        question: message.replaceAll("\n", ""),
+        question: message,
         sessionId: sessionId == undefined ? undefined : parseInt(sessionId),
       })
         .then((res) => {

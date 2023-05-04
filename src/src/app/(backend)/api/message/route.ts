@@ -399,19 +399,21 @@ export async function POST(req: Request) {
 
     question = question.replace(/\b0+(\d+)/g, "$1").trim(); // replace digits with 0 prefix
     console.info(question);
-    const listQuestion = question.split(/\?(?=\s)/);
+    const listQuestion = question.split("\n");
     const listResult = [];
 
     console.info(listQuestion);
 
     for (const question of listQuestion) {
-      let lowerQuestion = question.toLowerCase();
-      listResult.push(await getResult(lowerQuestion, choice, session?.user!));
+        if (question != "") {
+            let lowerQuestion = question.toLowerCase();
+            listResult.push(await getResult(lowerQuestion, choice, session?.user!));
+        }
     }
 
     const res = await prisma.message.create({
       data: {
-        content: listResult.join(". "),
+        content: listResult.join("\n\n"),
         type: MessageType.SYSTEM,
         sessionId: sessionId,
       },
