@@ -268,6 +268,9 @@ async function getResult(
           },
         },
       });
+      if (questionAnswers.length == 0) {
+        return `Tidak ada pertanyaan di database.`
+      }
       let similarityScores = [];
       for (let questionAns of questionAnswers) {
         let questionDB = questionAns.question.content;
