@@ -290,6 +290,9 @@ async function getResult(
         },
       });
       let questionAnswers = [...userQuestionAnswers, ...systemQuestionAnswer];
+      if (questionAnswers.length == 0) {
+        return `Tidak ada pertanyaan di database.`;
+      }
       let similarityScores = [];
       for (let questionAns of questionAnswers) {
         let questionDB = questionAns.question.content;

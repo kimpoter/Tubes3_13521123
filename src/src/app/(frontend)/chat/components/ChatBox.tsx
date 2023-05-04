@@ -96,10 +96,7 @@ export default function ChatBox() {
   async function handleSend() {
     if (message != "") {
       //TODO: Integrate question
-      let sessionId: string | undefined = undefined;
-      if (chatlog.length > 0) {
-        sessionId = chatlog[chatlog.length - 1].sessionId.toString();
-      }
+      let sessionId: string | undefined = currentSession;
       let newId = Math.ceil(Math.random() * 10000) + 3;
       let newChatLog: Message[] = [
         ...chatlog,
@@ -123,20 +120,24 @@ export default function ChatBox() {
         sessionId: sessionId == undefined ? undefined : parseInt(sessionId),
       })
         .then((res) => {
-          console.log(res);
-          setChatlog([...newChatLog, res]);
-          if (sessionId == undefined) {
-            setSessions([
-              {
-                id: res.sessionId,
-                name: message!,
-                userId: "",
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              },
-              ...sessions,
-            ]);
-            setCurrentSession(res.sessionId);
+          console.log("session", sessionId);
+          if (res == undefined) {
+            alert("Something is wrong");
+          } else {
+            setChatlog([...newChatLog, res]);
+            if (sessionId == undefined) {
+              setSessions([
+                {
+                  id: res.sessionId,
+                  name: message!,
+                  userId: "",
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                },
+                ...sessions,
+              ]);
+              setCurrentSession(res.sessionId);
+            }
           }
         })
         .finally(() => {
