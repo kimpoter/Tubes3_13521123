@@ -3,7 +3,7 @@ import { AuthSession, MessageRequestBody } from "@/lib/interfaces";
 import { kmpMatch } from "@/lib/kmp";
 import { levenshtein } from "@/lib/levenshtein";
 import prisma from "@/lib/prisma";
-import { MessageType, Session } from "@prisma/client";
+import { MessageType, QuestionAnswer, Session } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "../auth/[...nextauth]/route";
@@ -256,7 +256,7 @@ async function getResult(
         where: {
           userId: user.id,
         },
-        include: {
+        select: {
           question: {
             select: {
               content: true,
@@ -275,8 +275,11 @@ async function getResult(
           question: {
             type: "GLOBAL",
           },
+          user: {
+            role: "ADMIN",
+          },
         },
-        include: {
+        select: {
           question: {
             select: {
               content: true,
@@ -290,6 +293,11 @@ async function getResult(
         },
       });
       let questionAnswers = [...userQuestionAnswers, ...systemQuestionAnswer];
+      questionAnswers = questionAnswers.filter(
+        (value, index, self) =>
+          index ==
+          self.findIndex((t) => t.question.content === value.question.content)
+      );
       if (questionAnswers.length == 0) {
         return `Tidak ada pertanyaan di database.`;
       }
