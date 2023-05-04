@@ -251,7 +251,8 @@ async function getResult(
       }
     } else {
       let exactMatch;
-      const questionAnswers = await prisma.questionAnswer.findMany({
+      const userQuestionAnswers = await prisma.questionAnswer.findMany({
+        distinct: ["questionId", "userId"],
         where: {
           userId: user.id,
         },
@@ -268,6 +269,27 @@ async function getResult(
           },
         },
       });
+      const systemQuestionAnswer = await prisma.questionAnswer.findMany({
+        distinct: ["questionId", "userId"],
+        where: {
+          question: {
+            type: "GLOBAL",
+          },
+        },
+        include: {
+          question: {
+            select: {
+              content: true,
+            },
+          },
+          answer: {
+            select: {
+              content: true,
+            },
+          },
+        },
+      });
+      let questionAnswers = [...userQuestionAnswers, ...systemQuestionAnswer];
       let similarityScores = [];
       for (let questionAns of questionAnswers) {
         let questionDB = questionAns.question.content;
