@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { PaperPlaneIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { useEffect, useRef, useState, KeyboardEvent } from "react";
-import { AiChatBubble } from "./ChatBubble/AiChatBubble";
+import { AiChatBubble, OptionChatBubble } from "./ChatBubble/AiChatBubble";
 import { UserChatBubble } from "./ChatBubble/UserChatBubble";
 import { Message, MessageType } from "@prisma/client";
 import { useSessionContext } from "../context/SessionContext";
@@ -25,7 +25,6 @@ async function getMessages(
   const res = await fetch(`/api/sessions/${id}?cursor=${cursor}`);
   if (res.ok) {
     const data = await res.json();
-    console.log(data);
     return data.data;
   }
 
@@ -39,24 +38,11 @@ async function sendQuestion(body: MessageRequestBody) {
   });
   if (res.ok) {
     const data = await res.json();
+    console.log("answer", data.data);
     return data.data;
   }
   return null;
 }
-
-// async function createSession() {
-//   const res = await fetch("http://localhost:3000/api/sessions", {
-//     method: "POST",
-//   });
-
-//   if (res.ok) {
-//     const data = await res.json();
-
-//     return data;
-//   }
-
-//   return null;
-// }
 
 export default function ChatBox() {
   const { sessions, setSessions, currentSession, setCurrentSession } =
@@ -133,7 +119,7 @@ export default function ChatBox() {
 
       sendQuestion({
         choice: algorithm,
-        question: message,
+        question: message.replaceAll("\n", ""),
         sessionId: sessionId == undefined ? undefined : parseInt(sessionId),
       })
         .then((res) => {
@@ -143,7 +129,7 @@ export default function ChatBox() {
             setSessions([
               {
                 id: res.sessionId,
-                name: message,
+                name: message!,
                 userId: "",
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -221,9 +207,16 @@ export default function ChatBox() {
                 {chat.type == MessageType.USER && (
                   <UserChatBubble message={chat.content} />
                 )}
-                {chat.type == MessageType.SYSTEM && (
-                  <AiChatBubble message={chat.content} />
-                )}
+                {chat.type == MessageType.SYSTEM &&
+                  (chat.content.split("\n")[0] ==
+                  "Pertanyaan tidak ditemukan di database" ? (
+                    <OptionChatBubble
+                      options={chat.content.split("\n").slice(2, 5)}
+                      onClick={setMessage}
+                    />
+                  ) : (
+                    <AiChatBubble message={chat.content} />
+                  ))}
               </li>
             );
           })}
@@ -233,10 +226,7 @@ export default function ChatBox() {
       )}
 
       <div className="w-full flex flex-col justify-center items-center pb-4">
-        <div
-          id="chat-input"
-          className="px-0 md:px-24 lg:px-48 py-4 w-full flex flex-row justify-center items-stretch"
-        >
+        <div className="px-0 md:px-24 lg:px-48 py-4 w-full flex flex-row justify-center items-stretch">
           <form
             ref={formRef}
             className="w-full h-full px-8 py-4 flex flex-row bg-blur space-x-4"
@@ -246,6 +236,7 @@ export default function ChatBox() {
             }}
           >
             <textarea
+              id="chat-input"
               rows={1}
               placeholder="Send a message..."
               className="w-full resize-none bg-transparent focus:outline-none"

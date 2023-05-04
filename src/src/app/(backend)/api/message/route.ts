@@ -45,11 +45,8 @@ function calculate(expression: string) {
     if (regex.exprRegex.test(expression)) {
         expression = expression
             .replace("?", "")
-            .toString()
             .replaceAll(" ", "")
-            .toString()
             .replaceAll("\n", "")
-            .toString();
         try {
             return "Jawabannya adalah " + evaluate(expression);
         } catch (err) {
@@ -76,9 +73,7 @@ async function getResult(question: string, choice: "KMP" | "BM") {
         if (regex.exprRegex.test(dateString)) {
             dateString = dateString
                 .replaceAll(" ", "")
-                .toString()
                 .replace("?", "")
-                .toString()
                 .replace("hariapa", "");
             const dateParts = dateString.split("/");
             const year = parseInt(dateParts[2]);
@@ -103,7 +98,6 @@ async function getResult(question: string, choice: "KMP" | "BM") {
         } else if (regex.exprRegex.test(question)) {
             result = calculate(question);
         } else if (tambahMatches) {
-            // TODO TAMBAH DB
             let questionTambah = tambahMatches[1];
             let answerTambah = tambahMatches[2];
             try {
@@ -115,9 +109,9 @@ async function getResult(question: string, choice: "KMP" | "BM") {
                 });
                 result =
                     "Berhasil menambahkan pertanyaan " +
-                    questionTambah +
+                    `"${questionTambah}"` +
                     " dengan jawaban " +
-                    answerTambah;
+                    `"${answerTambah}"`;
             } catch (err) {
                 await prisma.questionAnswerr.update({
                     where: { question: questionTambah },
@@ -127,10 +121,9 @@ async function getResult(question: string, choice: "KMP" | "BM") {
                 });
                 result =
                     "Pertanyaan sudah ada di database dan jawaban telah diupdate ke " +
-                    answerTambah;
+                    `"${answerTambah}"`;
             }
         } else if (hapusMatches) {
-            // TODO HAPUS DB
             let questionHapus = hapusMatches[1];
             try {
                 const exist = await prisma.questionAnswerr.findUnique({
@@ -140,12 +133,12 @@ async function getResult(question: string, choice: "KMP" | "BM") {
                     await prisma.questionAnswerr.delete({
                         where: { question: questionHapus },
                     });
-                    result = "Berhasil menghapus pertanyaan " + questionHapus;
+                    result = "Berhasil menghapus pertanyaan " + `"${questionHapus}"`;
                 } else {
                     result = "Pertanyaan tidak ditemukan";
                 }
             } catch (err) {
-                result = "BZZ TERJADI ERROR MAAP";
+                result = "Terjadi kesalahan";
             }
         } else {
             let exactMatch;
@@ -161,7 +154,7 @@ async function getResult(question: string, choice: "KMP" | "BM") {
                 }
 
                 if (exactMatch) {
-                    result = "Jawaban anda persis ditemukan di DB: " + answerDB;
+                    result = answerDB;
                     break;
                 } else {
                     const kemiripan: number = levenshtein(question, questionDB);
@@ -177,16 +170,13 @@ async function getResult(question: string, choice: "KMP" | "BM") {
                 similarityScores.sort((a, b) => b.score - a.score);
                 // If highest similarity more than threshold, get that one.
                 if (similarityScores[0].score >= threshold) {
-                    result =
-                        "Jawaban ini " +
-                        similarityScores[0].score +
-                        " mirip :" +
-                        similarityScores[0].ans;
+                    result = `${similarityScores[0].ans} (${similarityScores[0].score}%)`
                 } else {
-                    result = "Apakah pertanyaan yang anda maksud ini? \n";
+                    result = "Pertanyaan tidak ditemukan di database\n"
+                    result += "Apakah pertanyaan yang anda maksud ini? \n";
                     result += similarityScores
                         .slice(0, 3)
-                        .map((obj) => Math.round(obj.score) + " : " + obj.ques)
+                        .map((obj, index) => `${index + 1}. ${obj.ques} (${Math.round(obj.score)}%)`)
                         .join("\n");
                 }
             }

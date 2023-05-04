@@ -2,7 +2,6 @@ import prisma from "@/lib/prisma";
 import { hash } from "bcrypt";
 import { NextResponse } from "next/server";
 import StatusCode from "status-code-enum";
-import { z } from "zod";
 
 export async function POST(req: Request) {
     console.log("ok");
