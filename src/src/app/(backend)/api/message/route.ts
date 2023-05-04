@@ -3,25 +3,29 @@ import { AuthSession, MessageRequestBody } from "@/lib/interfaces";
 import { kmpMatch } from "@/lib/kmp";
 import { levenshtein } from "@/lib/levenshtein";
 import prisma from "@/lib/prisma";
-import { MessageType, Session } from "@prisma/client";
+import { MessageType } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { evaluate } from "@/lib/calculator";
 import StatusCode from "status-code-enum";
-import { SessionOptions, User } from "next-auth/core/types";
 
 const regex = {
   exprRegex:
-    /^\s*\(*([-+]?(\d*\.\d+|\d+))(\s*((\+|\-|\*|\/|\^|\%))\s*\(*([-+]?(\d*\.\d+|\d+))\)*)*\s*\??\s*$/,
+    /^\s*\(*([-]?(\d*\.\d+|\d+))(\s*((\+|\-|\*|\/|\^|\%))\s*\(*([-]?(\d*\.\d+|\d+))\)*)*\s*\??\s*$/,
   calcQuestionRegex: /^\s*kalkulasi\s*(.*)$/i,
   dateRegex:
     /^\s*(0?[1-9]|[1-2][0-9]|3[0-1])\s*\/\s*(0?[1-9]|1[0-2])\s*\/\s*([0-9]{4})\s*\??\s*$/,
-  dateQuestionRegex: /^\s*hari apa\s*(.*)$/i,
+  dateQuestionRegex: /^\s*hari\s+apa\s*(.*)$/i,
   tambahRegex: /^tambahkan pertanyaan (.*) dengan jawaban (.*)$/i,
   hapusRegex: /^hapus pertanyaan (.*)$/u,
 };
 
+/**
+ * create new session
+ * @param name session's name
+ * @returns 
+ */
 async function createSession(name: string) {
   const session = await getServerSession(authOptions);
   console.info(session);
@@ -43,6 +47,12 @@ async function createSession(name: string) {
   }
 }
 
+/**
+ * calculate expression
+ * 
+ * @param expression string expression
+ * @returns 
+ */
 function calculate(expression: string) {
   if (regex.exprRegex.test(expression)) {
     expression = expression
@@ -50,7 +60,7 @@ function calculate(expression: string) {
       .replaceAll(" ", "")
       .replaceAll("\n", "");
     try {
-      return "Jawabannya adalah " + evaluate(expression);
+      return `Hasil dari ${expression} adalah ${evaluate(expression)}`;
     } catch (err) {
       if (err instanceof Error) {
         return "Sintaks persamaan tidak sesuai. " + err.message;
@@ -63,6 +73,13 @@ function calculate(expression: string) {
   }
 }
 
+/**
+ * 
+ * @param question 
+ * @param choice 
+ * @param user 
+ * @returns 
+ */
 async function getResult(
   question: string,
   choice: "KMP" | "BM",
@@ -72,7 +89,7 @@ async function getResult(
   const calcQuestionMatches = question.match(regex.calcQuestionRegex);
   const tambahMatches = question.match(regex.tambahRegex);
   const hapusMatches = question.match(regex.hapusRegex);
-
+    console.log("date question", dateQuestionMatches);
   let result;
   if (dateQuestionMatches) {
     let dateString = dateQuestionMatches[1];
@@ -90,7 +107,7 @@ async function getResult(
         weekday: "long",
       });
 
-      result = "Tanggal tersebut hari " + dayOfWeek;
+      result = `Tanggal ${dateString} hari ${dayOfWeek}`;
     } else {
       result = "Format atau tanggal tidak valid";
     }

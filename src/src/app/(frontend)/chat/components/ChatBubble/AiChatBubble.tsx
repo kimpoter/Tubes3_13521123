@@ -48,25 +48,6 @@ export function AiChatBubble({
   );
 }
 
-export function ErrorChatBubble({
-  message,
-  question,
-}: {
-  message: String;
-  question: String;
-}) {
-  return (
-    <AiChatBubbleLayout className={"bg-blur-error"}>
-      <div className="w-full flex flex-col space-y-4">
-        <p>{message}</p>
-        <button className="w-full bg-blur px-8 py-3 text-center hover:cursor-pointer hover:bg-opacity-30">
-          Regenerate answer
-        </button>
-      </div>
-    </AiChatBubbleLayout>
-  );
-}
-
 export function OptionChatBubble({
   options,
   onClick,
