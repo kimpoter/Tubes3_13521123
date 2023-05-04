@@ -3,7 +3,7 @@ import { AuthSession, MessageRequestBody } from "@/lib/interfaces";
 import { kmpMatch } from "@/lib/kmp";
 import { levenshtein } from "@/lib/levenshtein";
 import prisma from "@/lib/prisma";
-import { MessageType, Session } from "@prisma/client";
+import { MessageType, QuestionAnswer, Session } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "../auth/[...nextauth]/route";
