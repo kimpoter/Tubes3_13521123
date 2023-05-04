@@ -273,7 +273,7 @@ async function getResult(
         where: {
           userId: user.id,
         },
-        include: {
+        select: {
           question: {
             select: {
               content: true,
@@ -292,8 +292,11 @@ async function getResult(
           question: {
             type: "GLOBAL",
           },
+          user: {
+            role: "ADMIN",
+          },
         },
-        include: {
+        select: {
           question: {
             select: {
               content: true,
@@ -307,6 +310,11 @@ async function getResult(
         },
       });
       let questionAnswers = [...userQuestionAnswers, ...systemQuestionAnswer];
+      questionAnswers = questionAnswers.filter(
+        (value, index, self) =>
+          index ==
+          self.findIndex((t) => t.question.content === value.question.content)
+      );
       if (questionAnswers.length == 0) {
         return `Tidak ada pertanyaan di database.`;
       }
