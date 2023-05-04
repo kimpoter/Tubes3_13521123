@@ -65,11 +65,7 @@ export async function GET(
  */
 export async function DELETE(
   req: Request,
-  {
-    params,
-  }: {
-    params: { sessionId: string };
-  }
+  { params }: { params: { sessionId: string } }
 ) {
   const sessionId = Number(params.sessionId);
   if (isNaN(sessionId)) {
