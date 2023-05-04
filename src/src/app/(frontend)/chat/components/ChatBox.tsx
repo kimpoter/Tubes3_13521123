@@ -1,11 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { PaperPlaneIcon } from "@radix-ui/react-icons";
-import { useEffect, useRef, useState, KeyboardEvent, Suspense } from "react";
-import { AiChatBubble } from "./ChatBubble/AiChatBubble";
+import { PaperPlaneIcon, ReloadIcon } from "@radix-ui/react-icons";
+import { useEffect, useRef, useState, KeyboardEvent } from "react";
+import { AiChatBubble, OptionChatBubble } from "./ChatBubble/AiChatBubble";
 import { UserChatBubble } from "./ChatBubble/UserChatBubble";
-import { MessageType } from "@prisma/client";
+import { Message, MessageType } from "@prisma/client";
+import { useSessionContext } from "../context/SessionContext";
+import Loading from "../loading";
+import { useRouter } from "next/navigation";
+import { MessageRequestBody } from "@/lib/interfaces";
+import { useSettingsContext } from "../context/SettingsContext";
 
 const exampleQuery = [
   "Explain quantum computing in simple terms",
@@ -13,17 +18,63 @@ const exampleQuery = [
   "Kenapa Tugas Besar IF banyak sekali saya lelah mau turu",
 ];
 
-interface IMessage {
-  id: number;
-  type: MessageType;
-  content: string;
+async function getMessages(
+  id: string | number | undefined,
+  cursor: number = 0
+): Promise<{ messages: Message[]; cursor: number | null } | null> {
+  const res = await fetch(`/api/sessions/${id}?cursor=${cursor}`);
+  if (res.ok) {
+    const data = await res.json();
+    return data.data;
+  }
+
+  return null;
 }
 
-export default function ChatBox({ messages }: { messages: IMessage[] }) {
-  const [chatlog, setChatlog] = useState(messages);
+async function sendQuestion(body: MessageRequestBody) {
+  const res = await fetch(`/api/message`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    console.log("answer", data.data);
+    return data.data;
+  }
+  return null;
+}
+
+export default function ChatBox() {
+  const { sessions, setSessions, currentSession, setCurrentSession } =
+    useSessionContext();
+  const { algorithm } = useSettingsContext();
+  const [chatlog, setChatlog] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
+  const [loadMessages, setLoadMessages] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const messageAreaRef = useRef<null | HTMLTextAreaElement>(null);
   const formRef = useRef<null | HTMLFormElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    console.log(currentSession);
+    if (currentSession === undefined) {
+      setLoadMessages(false);
+      setChatlog([]);
+    } else {
+      setLoadMessages(true);
+      getMessages(currentSession)
+        .then((data) => {
+          if (data) {
+            if (data.messages.length == 0) router.push("/chat");
+            setChatlog(data.messages.reverse());
+          } else {
+            router.push("/chat");
+          }
+        })
+        .finally(() => setLoadMessages(false));
+    }
+  }, []);
 
   useEffect(() => {
     if (messageAreaRef.current != null) {
@@ -42,19 +93,55 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
     }
   });
 
-  function handleSend() {
+  async function handleSend() {
     if (message != "") {
-      let current = new Date();
-
-      setChatlog([
+      //TODO: Integrate question
+      let sessionId: string | undefined = undefined;
+      if (chatlog.length > 0) {
+        sessionId = chatlog[chatlog.length - 1].sessionId.toString();
+      }
+      let newId = Math.ceil(Math.random() * 10000) + 3;
+      let newChatLog: Message[] = [
         ...chatlog,
         {
-          id: 8214786375,
+          id: newId,
           type: MessageType.USER,
           content: message,
+
+          sessionId: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
-      ]);
+      ];
+      setChatlog(newChatLog);
       setMessage("");
+      setIsLoading(true);
+
+      sendQuestion({
+        choice: algorithm,
+        question: message.replaceAll("\n", ""),
+        sessionId: sessionId == undefined ? undefined : parseInt(sessionId),
+      })
+        .then((res) => {
+          console.log(res);
+          setChatlog([...newChatLog, res]);
+          if (sessionId == undefined) {
+            setSessions([
+              {
+                id: res.sessionId,
+                name: message!,
+                userId: "",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              ...sessions,
+            ]);
+            setCurrentSession(res.sessionId);
+          }
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
   }
 
@@ -65,10 +152,12 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
     }
   }
 
+  if (loadMessages) return <Loading />;
+
   return (
     <main className="w-full h-screen flex flex-col items-center justify-between">
       {chatlog.length == 0 && (
-        <div className="w-full h-full flex flex-col space-y-8 justify-center items-center">
+        <div className="scrollbar-hide w-full h-full flex flex-col space-y-8 justify-center items-center">
           <div className="flex flex-col justify-center items-center">
             <div className="relative w-20 h-20 sm:w-40 sm:h-40">
               <Image
@@ -108,28 +197,36 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
       )}
 
       {chatlog.length > 0 && (
-        <ul id="chat-box" className="w-full overflow-scroll scrollbar-hide">
-          {chatlog.map((chat) => {
+        <ul
+          id="chat-box"
+          className="w-full overflow-scroll scrollbar-hide pt-8"
+        >
+          {chatlog.map((chat, index) => {
             return (
               <li key={chat.id}>
                 {chat.type == MessageType.USER && (
                   <UserChatBubble message={chat.content} />
                 )}
-                {chat.type == MessageType.SYSTEM && (
-                  <AiChatBubble message={chat.content} />
-                )}
+                {chat.type == MessageType.SYSTEM &&
+                  (chat.content.split("\n")[0] ==
+                  "Pertanyaan tidak ditemukan di database" ? (
+                    <OptionChatBubble
+                      options={chat.content.split("\n").slice(2, 5)}
+                      onClick={setMessage}
+                    />
+                  ) : (
+                    <AiChatBubble message={chat.content} />
+                  ))}
               </li>
             );
           })}
+          {isLoading && <AiChatBubble message={""} isLoading />}
           <div id="bottom" />
         </ul>
       )}
 
       <div className="w-full flex flex-col justify-center items-center pb-4">
-        <div
-          id="chat-input"
-          className="px-0 md:px-24 lg:px-48 py-4 w-full flex flex-row justify-center items-stretch"
-        >
+        <div className="px-0 md:px-24 lg:px-48 py-4 w-full flex flex-row justify-center items-stretch">
           <form
             ref={formRef}
             className="w-full h-full px-8 py-4 flex flex-row bg-blur space-x-4"
@@ -139,6 +236,7 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
             }}
           >
             <textarea
+              id="chat-input"
               rows={1}
               placeholder="Send a message..."
               className="w-full resize-none bg-transparent focus:outline-none"
@@ -148,12 +246,21 @@ export default function ChatBox({ messages }: { messages: IMessage[] }) {
                 setMessage(e.currentTarget.value);
               }}
               onKeyDown={onEnterPress}
+              disabled={isLoading}
+              autoFocus
             />
-            <button className="h-full" type="submit">
-              <PaperPlaneIcon
-                className="-rotate-45"
-                style={{ height: "100%", width: 20 }}
-              />
+            <button className="h-full" type="submit" disabled={isLoading}>
+              {!isLoading ? (
+                <PaperPlaneIcon
+                  className="-rotate-45"
+                  style={{ height: "100%", width: 20 }}
+                />
+              ) : (
+                <ReloadIcon
+                  className="animate-spin"
+                  style={{ height: "100%", width: 20 }}
+                />
+              )}
             </button>
           </form>
         </div>

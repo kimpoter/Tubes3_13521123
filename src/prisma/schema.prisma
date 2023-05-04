@@ -3,11 +3,77 @@ generator client {
 }
 
 datasource db {
-  provider = "cockroachdb"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("POSTGRES_PRISMA_URL")
+  directUrl         = env("POSTGRES_URL_NON_POOLING")
+  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
-// Enums
+model User {
+  id             String           @id @default(uuid())
+  email          String           @unique
+  password       String
+  role           Role             @default(USER)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  sessions       Session[]
+  QuestionAnswer QuestionAnswer[]
+}
+
+model Session {
+  id        Int       @id @default(autoincrement())
+  name      String
+  userId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model QuestionAnswerr {
+  id       Int    @id @default(autoincrement())
+  question String @unique
+  answer   String
+}
+
+model Question {
+  id        Int              @id @default(autoincrement())
+  content   String           @unique
+  type      QuestionType
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  answers   QuestionAnswer[]
+}
+
+model Answer {
+  id        Int              @id @default(autoincrement())
+  content   String           @unique
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  questions QuestionAnswer[]
+}
+
+model Message {
+  id        Int         @id @default(autoincrement())
+  content   String
+  type      MessageType
+  sessionId Int
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  Session   Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model QuestionAnswer {
+  userId     String
+  questionId Int
+  answerId   Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answer     Answer   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, answerId, userId])
+}
+
 enum Role {
   ADMIN
   USER
@@ -21,88 +87,4 @@ enum QuestionType {
 enum MessageType {
   SYSTEM
   USER
-}
-
-// Single models
-model User {
-  id       String @id @default(uuid())
-  email    String @unique
-  password String
-  role     Role   @default(USER)
-
-  // Foreign relationship
-  sessions  Session[]
-  questions UserQuestion[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Session {
-  id   Int    @id @default(sequence(maxValue: 4294967295))
-  name String
-
-  // Foreign relationship
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId   String
-  messages Message[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Question {
-  id      Int          @id @default(sequence(maxValue: 4294967295))
-  content String       @unique
-  type    QuestionType
-
-  // Foreign relationships
-  users   UserQuestion[]
-  answers QuestionAnswer[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Answer {
-  id      Int    @id @default(sequence(maxValue: 4294967295))
-  content String @unique
-
-  // Foreign relationships
-  questions QuestionAnswer[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Message {
-  id      Int         @id @default(sequence(maxValue: 4294967295))
-  content String
-  type    MessageType
-
-  // Foreign relationship
-  Session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sessionId Int
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// Join models
-model UserQuestion {
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  questionId Int
-
-  @@id([userId, questionId])
-}
-
-model QuestionAnswer {
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  questionId Int
-  answer     Answer   @relation(fields: [answerId], references: [id], onDelete: Cascade)
-  answerId   Int
-
-  @@id([questionId, answerId])
 }

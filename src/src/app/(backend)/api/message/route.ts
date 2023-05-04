@@ -1,41 +1,87 @@
 import { bmMatch } from "@/lib/bm";
-import { MessageRequestBody } from "@/lib/interfaces";
+import { AuthSession, MessageRequestBody } from "@/lib/interfaces";
 import { kmpMatch } from "@/lib/kmp";
 import { levenshtein } from "@/lib/levenshtein";
+import prisma from "@/lib/prisma";
+import { MessageType, Session } from "@prisma/client";
+import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { evaluate } from "@/lib/calculator";
+import StatusCode from "status-code-enum";
+import { SessionOptions, User } from "next-auth/core/types";
 
 const regex = {
-  calcRegex:
-    /^\s*\d+(\.\d+)?(\s*[\\+\\-\\*\\^\\/]\s*\d+(\.\d+)?)*(\s*[\\+\\-\\*\\^\\/]\s*\d+(\.\d+)?)*\s*$/,
-  dateRegex: /^(0?[1-9]|[1-2][0-9]|3[0-1])\-(0?[1-9]|1[0-2])\-([0-9]{4})$/,
-  tambahRegex: /^tambahkan pertanyaan (\w+) dengan jawaban (\w+)$/,
-  hapusRegex: /^hapus pertanyaan (\w+)$/u,
+  exprRegex:
+    /^\s*\(*([-+]?(\d*\.\d+|\d+))(\s*((\+|\-|\*|\/|\^|\%))\s*\(*([-+]?(\d*\.\d+|\d+))\)*)*\s*\??\s*$/,
+  calcQuestionRegex: /^\s*kalkulasi\s*(.*)$/i,
+  dateRegex:
+    /^\s*(0?[1-9]|[1-2][0-9]|3[0-1])\s*\/\s*(0?[1-9]|1[0-2])\s*\/\s*([0-9]{4})\s*\??\s*$/,
+  dateQuestionRegex: /^\s*hari apa\s*(.*)$/i,
+  tambahRegex: /^tambahkan pertanyaan (.*) dengan jawaban (.*)$/i,
+  hapusRegex: /^hapus pertanyaan (.*)$/u,
 };
 
-/**
- * /api/message
- * Processing user question and giving the appropriate response
- *
- * @param req Request
- * @returns Response messsage from system
- */
-export async function POST(req: Request) {
+async function createSession(name: string) {
+  const session = await getServerSession(authOptions);
+  console.info(session);
   try {
-    let { choice, question }: MessageRequestBody = await req.json();
+    const result = await prisma.session.create({
+      data: {
+        name: name,
+        user: {
+          connect: {
+            id: session?.user.id,
+          },
+        },
+      },
+    });
+    return result.id;
+  } catch (err) {
+    console.log(err);
+    return undefined;
+  }
+}
 
-    // Untuk validasi tanggal, javascript marah kalo ada / diikuti 0. Jadi kita pake "/"
-    question = question.replaceAll("/", "-").toString().toLowerCase();
-    console.log(question);
+function calculate(expression: string) {
+  if (regex.exprRegex.test(expression)) {
+    expression = expression
+      .replace("?", "")
+      .replaceAll(" ", "")
+      .replaceAll("\n", "");
+    try {
+      return "Jawabannya adalah " + evaluate(expression);
+    } catch (err) {
+      if (err instanceof Error) {
+        return "Sintaks persamaan tidak sesuai. " + err.message;
+      } else {
+        return "Sintaks persamaan tidak sesuai.";
+      }
+    }
+  } else {
+    return "Sintaks persamaan tidak sesuai.";
+  }
+}
 
-    const tambahMatches = question.match(regex.tambahRegex);
-    const hapusMatches = question.match(regex.hapusRegex);
+async function getResult(
+  question: string,
+  choice: "KMP" | "BM",
+  user: AuthSession
+) {
+  const dateQuestionMatches = question.match(regex.dateQuestionRegex);
+  const calcQuestionMatches = question.match(regex.calcQuestionRegex);
+  const tambahMatches = question.match(regex.tambahRegex);
+  const hapusMatches = question.match(regex.hapusRegex);
 
-    let result;
-    if (regex.calcRegex.test(question)) {
-      // console.log("hi");
-      result = "Jawabannya adalah " + eval(question);
-    } else if (regex.dateRegex.test(question)) {
-      const dateParts = question.split("-");
+  let result;
+  if (dateQuestionMatches) {
+    let dateString = dateQuestionMatches[1];
+    if (regex.exprRegex.test(dateString)) {
+      dateString = dateString
+        .replaceAll(" ", "")
+        .replace("?", "")
+        .replace("hariapa", "");
+      const dateParts = dateString.split("/");
       const year = parseInt(dateParts[2]);
       const month = parseInt(dateParts[1]) - 1; // month is zero-indexed
       const day = parseInt(dateParts[0]);
@@ -45,37 +91,287 @@ export async function POST(req: Request) {
       });
 
       result = "Tanggal tersebut hari " + dayOfWeek;
+    } else {
+      result = "Format atau tanggal tidak valid";
+    }
+  } else {
+    if (calcQuestionMatches) {
+      let expression = calcQuestionMatches[1];
+      result = calculate(expression);
+    } else if (regex.exprRegex.test(question)) {
+      result = calculate(question);
     } else if (tambahMatches) {
-      // TODO TAMBAH DB
       let questionTambah = tambahMatches[1];
       let answerTambah = tambahMatches[2];
-      result = "Mau tambah " + questionTambah + " jawab " + answerTambah;
+
+      try {
+        const answerTambahID = await prisma.questionAnswer.findFirst({
+          where: {
+            question: {
+              content: questionTambah,
+            },
+            user: {
+              id: user.id,
+            },
+          },
+          select: {
+            answerId: true,
+          },
+        });
+        const question = await prisma.question.findFirst({
+          where: {
+            content: questionTambah,
+            answers: {
+              some: {
+                userId: user.id,
+              },
+            },
+          },
+        });
+        const answer = await prisma.answer.findFirst({
+          where: {
+            content: answerTambah,
+            questions: {
+              some: {
+                question: {
+                  content: questionTambah,
+                },
+                userId: user.id,
+              },
+            },
+          },
+        });
+
+        if (!question || !answer) {
+          await prisma.$transaction(async (tx) => {
+            await tx.questionAnswer.create({
+              data: {
+                answer: {
+                  connectOrCreate: {
+                    where: {
+                      content: answerTambah,
+                    },
+                    create: {
+                      content: answerTambah,
+                    },
+                  },
+                },
+                question: {
+                  connectOrCreate: {
+                    where: {
+                      content: questionTambah,
+                    },
+                    create: {
+                      type: user.role == "ADMIN" ? "GLOBAL" : "USER",
+                      content: questionTambah,
+                    },
+                  },
+                },
+                user: {
+                  connect: {
+                    id: user.id,
+                  },
+                },
+              },
+            });
+
+            if (question) {
+              await tx.questionAnswer.delete({
+                where: {
+                  questionId_answerId_userId: {
+                    questionId: question.id,
+                    answerId: answerTambahID?.answerId ?? 0,
+                    userId: user.id,
+                  },
+                },
+              });
+            }
+          });
+        }
+
+        if (question && answer) {
+          result = `Pertanyaan "${questionTambah}" dengan jawaban "${answerTambah}" telah ada di database`;
+        } else if (question) {
+          result = `Pertanyaan "${questionTambah}" sudah ada di database dan jawaban telah diupdate ke "${answerTambah}"`;
+        } else {
+          result = `Berhasil menambahkan pertanyaan "${questionTambah}" dengan jawaban "${answerTambah}"`;
+        }
+        // await prisma.questionAnswerr.create({
+        //   data: {
+        //     question: questionTambah,
+        //     answer: answerTambah,
+        //   },
+        // });
+        // result =
+        //   "Berhasil menambahkan pertanyaan " +
+        //   `"${questionTambah}"` +
+        //   " dengan jawaban " +
+        //   `"${answerTambah}"`;
+      } catch (_) {
+        result = "Internal server error.😶";
+        // await prisma.questionAnswerr.update({
+        //   where: { question: questionTambah },
+        //   data: {
+        //     answer: answerTambah,
+        //   },
+        // });
+        // result =
+        //   "Pertanyaan sudah ada di database dan jawaban telah diupdate ke " +
+        //   `"${answerTambah}"`;
+      }
     } else if (hapusMatches) {
-      // TODO HAPUS DB
       let questionHapus = hapusMatches[1];
-      result = "Mau hapus " + questionHapus;
+      try {
+        const question = await prisma.questionAnswer.findFirst({
+          where: {
+            question: {
+              content: questionHapus,
+            },
+            user: {
+              id: user.id,
+            },
+          },
+        });
+        if (question) {
+          await prisma.questionAnswer.delete({
+            where: {
+              questionId_answerId_userId: {
+                questionId: question.questionId,
+                answerId: question.answerId,
+                userId: user.id,
+              },
+            },
+          });
+          result = "Berhasil menghapus pertanyaan " + `"${questionHapus}"`;
+        } else {
+          result = "Pertanyaan tidak ditemukan";
+        }
+      } catch (_) {
+        result = "Internal server error.😶";
+      }
     } else {
       let exactMatch;
-      // TODO LOOP OVER EACH QUESTION IN DB, set result
-      if (choice == "KMP") {
-        exactMatch = kmpMatch(question, "tes");
-      } else {
-        exactMatch = bmMatch(question, "tes");
-      }
-
-      if (exactMatch) {
-        result = "HASILNYA JAWABAN DB";
-      } else {
-        // TODO GET APPROXIMATE ANSWER (mirip > 90%)
-        const kemiripan: number = levenshtein("s_pattern", "s_target");
-        if (kemiripan > 0.9) {
-          result = "HASIL JAWABAN DB";
+      const questionAnswers = await prisma.questionAnswer.findMany({
+        where: {
+          userId: user.id,
+        },
+        include: {
+          question: {
+            select: {
+              content: true,
+            },
+          },
+          answer: {
+            select: {
+              content: true,
+            },
+          },
+        },
+      });
+      let similarityScores = [];
+      for (let questionAns of questionAnswers) {
+        let questionDB = questionAns.question.content;
+        let answerDB = questionAns.answer.content;
+        if (choice == "KMP") {
+          exactMatch = kmpMatch(question, questionDB);
         } else {
-          result = "REKOMENDASI PERTANYAAN DB TOP 3 YG PALING MIRIP";
+          exactMatch = bmMatch(question, questionDB);
+        }
+
+        if (exactMatch) {
+          result = answerDB;
+          break;
+        } else {
+          const kemiripan: number = levenshtein(question, questionDB);
+          similarityScores.push({
+            ques: questionDB,
+            ans: answerDB,
+            score: kemiripan,
+          });
+        }
+      }
+      if (!exactMatch) {
+        const threshold = 90;
+        similarityScores.sort((a, b) => b.score - a.score);
+        // If highest similarity more than threshold, get that one.
+        if (similarityScores[0].score >= threshold) {
+          result = `${similarityScores[0].ans} (${similarityScores[0].score}%)`;
+        } else {
+          result = "Pertanyaan tidak ditemukan di database\n";
+          result += "Apakah pertanyaan yang anda maksud ini? \n";
+          result += similarityScores
+            .slice(0, 3)
+            .map(
+              (obj, index) =>
+                `${index + 1}. ${obj.ques} (${Math.round(obj.score)}%)`
+            )
+            .join("\n");
         }
       }
     }
-    return NextResponse.json(result);
+  }
+
+  return result;
+}
+
+/**
+ * /api/message
+ * Processing user question and giving the appropriate response
+ *
+ * @param req Request
+ * @returns Response messsage from system
+ */
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+
+  try {
+    let { choice, question, sessionId }: MessageRequestBody = await req.json();
+    console.info("session id (server)", sessionId);
+    if (sessionId == undefined) {
+      sessionId = await createSession(question);
+      if (sessionId == undefined) {
+        return new NextResponse(
+          "Internal server error. Failed to create session",
+          {
+            status: StatusCode.ServerErrorInternal,
+          }
+        );
+      }
+    }
+
+    await prisma.message.create({
+      data: {
+        content: question,
+        type: MessageType.USER,
+        sessionId: sessionId,
+      },
+    });
+
+    question = question.replace(/\b0+(\d+)/g, "$1").trim(); // replace digits with 0 prefix
+    console.info(question);
+    const listQuestion = question.split(/\?(?=\s)/);
+    const listResult = [];
+
+    console.info(listQuestion);
+
+    for (const question of listQuestion) {
+      let lowerQuestion = question.toLowerCase();
+      listResult.push(await getResult(lowerQuestion, choice, session?.user!));
+    }
+
+    const res = await prisma.message.create({
+      data: {
+        content: listResult.join(". "),
+        type: MessageType.SYSTEM,
+        sessionId: sessionId,
+      },
+    });
+    console.info(res);
+    return NextResponse.json({
+      is_success: true,
+      message: null,
+      data: res,
+    });
   } catch (err) {
     console.log(err);
     return NextResponse.json({ error: err });

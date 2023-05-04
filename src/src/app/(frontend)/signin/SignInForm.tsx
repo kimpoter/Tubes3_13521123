@@ -2,19 +2,22 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { ReloadIcon } from "@radix-ui/react-icons";
 
 export default function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    signIn("credentials", {
+    setIsLoading(true);
+    const res = await signIn("credentials", {
       email,
       password,
       callbackUrl: "/chat",
     });
+    if (res) setIsLoading(false);
   };
   return (
     <div className="main-background h-screen flex flex-col justify-center items-center w-full">
@@ -58,10 +61,20 @@ export default function SignInForm() {
         </div>
 
         <button
-          className="w-full bg-orange-500 bg-opacity-40 rounded-lg my-4 text-slate-200 font-semibold py-2 mt-8"
+          className={`w-full flex justify-center ${
+            isLoading ? "bg-orange-400" : "bg-orange-500"
+          } bg-opacity-40 rounded-lg my-4 text-slate-200 font-semibold py-2 mt-8`}
           type="submit"
+          disabled={isLoading}
         >
-          Sign In
+          {!isLoading ? (
+            "Sign In"
+          ) : (
+            <ReloadIcon
+              className="animate-spin"
+              style={{ height: "100%", width: 20 }}
+            />
+          )}
         </button>
       </form>
 

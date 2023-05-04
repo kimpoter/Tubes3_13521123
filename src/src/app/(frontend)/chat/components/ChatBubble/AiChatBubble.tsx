@@ -25,16 +25,25 @@ export function AiChatBubble({
   message: String;
   isLoading?: boolean;
 }) {
+  const lines = message.split("\n");
   return (
     <AiChatBubbleLayout>
       {isLoading && (
         <div className="w-full flex flex-col space-y-3">
-          <div className="w-full bg-blur h-4 animate-pulse" />
-          <div className="w-2/3 bg-blur h-4 animate-pulse" />
+          <div className="w-full bg-blur h-3 animate-pulse" />
+          <div className="w-2/3 bg-blur h-3 animate-pulse" />
         </div>
       )}
 
-      {!isLoading && <p>{message}</p>}
+      <div className="flex flex-col">
+        {!isLoading &&
+          lines.map((line, index) => (
+            <p key={index}>
+              {line}
+              {index !== lines.length - 1 && <br />}
+            </p>
+          ))}
+      </div>
     </AiChatBubbleLayout>
   );
 }
@@ -65,6 +74,7 @@ export function OptionChatBubble({
   options: string[];
   onClick: (option: string) => void;
 }) {
+  const pattern: RegExp = /^\d+\.\s(.+?)\s\(\d+%?\)$/;
   return (
     <AiChatBubbleLayout>
       <div className="w-full flex flex-col space-y-4">
@@ -73,10 +83,12 @@ export function OptionChatBubble({
           return (
             <button
               key={index}
-              onClick={(e) => onClick(option)}
+              onClick={(e) =>
+                onClick(option.match(pattern) ? option.match(pattern)![1] : "")
+              }
               className="w-full bg-blur px-8 py-3 text-center hover:cursor-pointer hover:bg-opacity-30"
             >
-              {`"${option}" →`}
+              {`${option} →`}
             </button>
           );
         })}
