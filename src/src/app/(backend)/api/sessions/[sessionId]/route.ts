@@ -63,7 +63,10 @@ export async function GET(
  * @param req  Request
  * @returns -
  */
-export async function DELETE({ params }: { params: { sessionId: string } }) {
+export async function DELETE(
+  req: Request,
+  { params }: { params: { sessionId: string } }
+) {
   const sessionId = Number(params.sessionId);
   if (isNaN(sessionId)) {
     return new NextResponse("Invalid URL params", {
