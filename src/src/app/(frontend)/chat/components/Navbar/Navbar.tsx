@@ -32,8 +32,14 @@ export default function Navbar() {
         setSessions(data);
       })
       .finally(() => setLoading(false));
+    // eslint-disable-next-line
   }, []);
 
+  /**
+   * delete session with id
+   *
+   * @param id session id
+   */
   async function deleteSession(id: number) {
     const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
     setSessions(sessions.filter((session) => session.id != id));

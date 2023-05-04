@@ -18,6 +18,13 @@ const exampleQuery = [
   "Kenapa Tugas Besar IF banyak sekali saya lelah mau turu",
 ];
 
+/**
+ * get messages from server
+ *
+ * @param id session id
+ * @param cursor pagination
+ * @returns array of message and null if error
+ */
 async function getMessages(
   id: string | number | undefined,
   cursor: number = 0
@@ -31,6 +38,12 @@ async function getMessages(
   return null;
 }
 
+/**
+ * send question to the server and fetch answer
+ *
+ * @param body message request body
+ * @returns answer to the question and null if error
+ */
 async function sendQuestion(body: MessageRequestBody) {
   const res = await fetch(`/api/message`, {
     method: "POST",
@@ -44,20 +57,30 @@ async function sendQuestion(body: MessageRequestBody) {
   return null;
 }
 
+/**
+ *
+ * @returns ui for chat box
+ */
 export default function ChatBox() {
+  // context
   const { sessions, setSessions, currentSession, setCurrentSession } =
     useSessionContext();
   const { algorithm } = useSettingsContext();
+  // state
   const [chatlog, setChatlog] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
   const [loadMessages, setLoadMessages] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  // ref
   const messageAreaRef = useRef<null | HTMLTextAreaElement>(null);
   const formRef = useRef<null | HTMLFormElement>(null);
+  // router
   const router = useRouter();
 
+  /**
+   * fetching messages
+   */
   useEffect(() => {
-    console.log(currentSession);
     if (currentSession === undefined) {
       setLoadMessages(false);
       setChatlog([]);
@@ -74,16 +97,23 @@ export default function ChatBox() {
         })
         .finally(() => setLoadMessages(false));
     }
+    // eslint-disable-next-line
   }, []);
 
+  /**
+   * updating text area
+   */
   useEffect(() => {
     if (messageAreaRef.current != null) {
       messageAreaRef.current.style.height = "auto";
       messageAreaRef.current.style.height =
-        Math.min(messageAreaRef.current.scrollHeight, 72) + "px";
+        Math.min(messageAreaRef.current.scrollHeight, 36 * 5) + "px";
     }
   }, [message]);
 
+  /**
+   * updating cursor
+   */
   useEffect(() => {
     const bottom = document.getElementById("bottom");
     if (bottom != null) {
@@ -93,11 +123,15 @@ export default function ChatBox() {
     }
   });
 
+  /**
+   * send message to the server
+   */
   async function handleSend() {
     if (message != "") {
-      //TODO: Integrate question
       let sessionId: string | undefined = currentSession;
+      // temporary id (client side only)
       let newId = Math.ceil(Math.random() * 10000) + 3;
+      // add user message
       let newChatLog: Message[] = [
         ...chatlog,
         {
@@ -111,21 +145,23 @@ export default function ChatBox() {
         },
       ];
       setChatlog(newChatLog);
-      setMessage("");
+      setMessage(""); // empty textarea
+      // start fetching
       setIsLoading(true);
-
       sendQuestion({
         choice: algorithm,
-        question: message.replaceAll("\n", ""),
+        question: message,
         sessionId: sessionId == undefined ? undefined : parseInt(sessionId),
       })
         .then((res) => {
-          console.log("session", sessionId);
           if (res == undefined) {
+            // there is internal server error
             alert("Something is wrong");
           } else {
+            // add answer to chat log
             setChatlog([...newChatLog, res]);
             if (sessionId == undefined) {
+              // if session is undefined (new session)
               setSessions([
                 {
                   id: res.sessionId,
@@ -146,6 +182,11 @@ export default function ChatBox() {
     }
   }
 
+  /**
+   * handle submit on enter
+   *
+   * @param e
+   */
   function onEnterPress(e: KeyboardEvent) {
     if (e.key === "Enter" && e.shiftKey == false) {
       e.preventDefault();

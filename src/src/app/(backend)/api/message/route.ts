@@ -3,25 +3,29 @@ import { AuthSession, MessageRequestBody } from "@/lib/interfaces";
 import { kmpMatch } from "@/lib/kmp";
 import { levenshtein } from "@/lib/levenshtein";
 import prisma from "@/lib/prisma";
-import { MessageType, QuestionAnswer, Session } from "@prisma/client";
+import { MessageType } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { evaluate } from "@/lib/calculator";
 import StatusCode from "status-code-enum";
-import { SessionOptions, User } from "next-auth/core/types";
 
 const regex = {
-    exprRegex:
-        /^\s*\(*([-+]?(\d*\.\d+|\d+))(\s*((\+|\-|\*|\/|\^|\%))\s*\(*([-+]?(\d*\.\d+|\d+))\)*)*\s*\??\s*$/,
-    calcQuestionRegex: /^\s*kalkulasi\s*(.*)$/i,
-    dateRegex:
-        /^\s*(0?[1-9]|[1-2][0-9]|3[0-1])\s*\/\s*(0?[1-9]|1[0-2])\s*\/\s*([0-9]{4})\s*\??\s*$/,
-    dateQuestionRegex: /^\s*hari apa\s*(.*)$/i,
-    tambahRegex: /^tambahkan pertanyaan (.*) dengan jawaban (.*)$/i,
-    hapusRegex: /^hapus pertanyaan (.*)$/u,
+  exprRegex:
+    /^\s*\(*([-]?(\d*\.\d+|\d+))(\s*((\+|\-|\*|\/|\^|\%))\s*\(*([-]?(\d*\.\d+|\d+))\)*)*\s*\??\s*$/,
+  calcQuestionRegex: /^\s*kalkulasi\s*(.*)$/i,
+  dateRegex:
+    /^\s*(0?[1-9]|[1-2][0-9]|3[0-1])\s*\/\s*(0?[1-9]|1[0-2])\s*\/\s*([0-9]{4})\s*\??\s*$/,
+  dateQuestionRegex: /^\s*hari\s+apa\s*(.*)$/i,
+  tambahRegex: /^tambahkan pertanyaan (.*) dengan jawaban (.*)$/i,
+  hapusRegex: /^hapus pertanyaan (.*)$/u,
 };
 
+/**
+ * create new session
+ * @param name session's name
+ * @returns 
+ */
 async function createSession(name: string) {
     const session = await getServerSession(authOptions);
     console.info(session);
@@ -43,26 +47,38 @@ async function createSession(name: string) {
     }
 }
 
+/**
+ * calculate expression
+ * 
+ * @param expression string expression
+ * @returns 
+ */
 function calculate(expression: string) {
-    if (regex.exprRegex.test(expression)) {
-        expression = expression
-            .replace("?", "")
-            .replaceAll(" ", "")
-            .replaceAll("\n", "");
-        try {
-            return "Jawabannya adalah " + evaluate(expression);
-        } catch (err) {
-            if (err instanceof Error) {
-                return "Sintaks persamaan tidak sesuai. " + err.message;
-            } else {
-                return "Sintaks persamaan tidak sesuai.";
-            }
-        }
+  if (regex.exprRegex.test(expression)) {
+    expression = expression
+      .replace("?", "")
+      .replaceAll(" ", "")
+      .replaceAll("\n", "");
+    try {
+      return `Hasil dari ${expression} adalah ${evaluate(expression)}`;
+    } catch (err) {
+      if (err instanceof Error) {
+        return "Sintaks persamaan tidak sesuai. " + err.message;
+      } else {
+        return "Sintaks persamaan tidak sesuai.";
+      }
+    }
     } else {
         return "Sintaks persamaan tidak sesuai.";
     }
 }
-
+/**
+ * 
+ * @param question 
+ * @param choice 
+ * @param user 
+ * @returns 
+ */
 async function getResult(
     question: string,
     choice: "KMP" | "BM",
@@ -99,7 +115,7 @@ async function getResult(
                 }
             );
 
-            result = "Tanggal tersebut hari " + dayOfWeek;
+      result = `Tanggal ${dateString} hari ${dayOfWeek}`;
         } else {
             result = "Format atau tanggal tidak valid";
         }
@@ -385,33 +401,33 @@ export async function POST(req: Request) {
         }
 
         await prisma.message.create({
-            data: {
-                content: question,
-                type: MessageType.USER,
-                sessionId: sessionId,
-            },
+        data: {
+            content: question,
+            type: MessageType.USER,
+            sessionId: sessionId,
+        },
         });
 
         question = question.replace(/\b0+(\d+)/g, "$1").trim(); // replace digits with 0 prefix
         console.info(question);
-        const listQuestion = question.split(/\?(?=\s)/);
+        const listQuestion = question.split("\n");
         const listResult = [];
 
         console.info(listQuestion);
 
         for (const question of listQuestion) {
-            let lowerQuestion = question.toLowerCase();
-            listResult.push(
-                await getResult(lowerQuestion, choice, session?.user!)
-            );
+            if (question != "") {
+                let lowerQuestion = question.toLowerCase();
+                listResult.push(await getResult(lowerQuestion, choice, session?.user!));
+            }
         }
 
         const res = await prisma.message.create({
-            data: {
-                content: listResult.join(". "),
-                type: MessageType.SYSTEM,
-                sessionId: sessionId,
-            },
+        data: {
+            content: listResult.join("\n\n"),
+            type: MessageType.SYSTEM,
+            sessionId: sessionId,
+        },
         });
         console.info(res);
         return NextResponse.json({
@@ -422,5 +438,5 @@ export async function POST(req: Request) {
     } catch (err) {
         console.log(err);
         return NextResponse.json({ error: err });
-    }
+  }
 }

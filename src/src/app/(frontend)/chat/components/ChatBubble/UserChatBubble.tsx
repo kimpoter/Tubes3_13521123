@@ -7,6 +7,7 @@ export function UserChatBubble({
   message: String;
   isLoading?: boolean;
 }) {
+  const lines = message.split("\n");
   return (
     <div className={`chat-bubble`}>
       <div className={`flex-shrink-0 text-transparent`}>
@@ -20,7 +21,15 @@ export function UserChatBubble({
         </div>
       )}
 
-      {!isLoading && <p>{message}</p>}
+      <div className="flex flex-col">
+        {!isLoading &&
+          lines.map((line, index) => (
+            <p key={index}>
+              {line}
+              {index !== lines.length - 1 && <br />}
+            </p>
+          ))}
+      </div>
     </div>
   );
 }
