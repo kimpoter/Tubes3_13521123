@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { evaluate } from "@/lib/calculator";
 import StatusCode from "status-code-enum";
-import moment from "moment";
+import { getDayOfWeek, isDateValid } from "@/lib/day";
 
 const regex = {
   exprRegex:
@@ -71,11 +71,7 @@ function calculate(expression: string) {
     return "Sintaks persamaan tidak sesuai.";
   }
 }
-function isDateValid(dateString: string) {
-    const [day, month, year] = dateString.split('/');
-    const parsedDate = moment(`${year}-${month}-${day}`, 'YYYY-MM-DD');
-    return parsedDate.isValid();
-  }
+
 /**
  *
  * @param question
@@ -97,22 +93,19 @@ async function getResult(
   if (dateQuestionMatches) {
     let dateString = dateQuestionMatches[1];
     dateString = dateString
-      .replaceAll(" ", "")
-      .replace("?", "")
-      .replace("hariapa", "");
-      let isValid = isDateValid(dateString);
-      if (isValid) {
+    .replaceAll(" ", "")
+    .replace("?", "")
+    let isValid = isDateValid(dateString);
+    if (isValid) {
         const dateParts = dateString.split("/");
         const year = parseInt(dateParts[2]);
-        const month = parseInt(dateParts[1]) - 1; // month is zero-indexed
+        const month = parseInt(dateParts[1]); // month is zero-indexed
         const day = parseInt(dateParts[0]);
-        const dayOfWeek = new Date(year, month, day).toLocaleDateString("id-ID", {
-                weekday: "long",
-              });
+        const dayOfWeek = getDayOfWeek(year, month, day);
         result = `Tanggal ${dateString} hari ${dayOfWeek}`;
-      } else {
+    } else {
         result = "Format atau tanggal tidak valid";
-      }
+    }
   } else {
     if (calcQuestionMatches) {
       let expression = calcQuestionMatches[1];
