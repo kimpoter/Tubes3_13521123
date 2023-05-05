@@ -29,7 +29,6 @@ const regex = {
  */
 async function createSession(name: string) {
   const session = await getServerSession(authOptions);
-  console.info(session);
   try {
     const result = await prisma.session.create({
       data: {
@@ -43,7 +42,6 @@ async function createSession(name: string) {
     });
     return result.id;
   } catch (err) {
-    console.log(err);
     return undefined;
   }
 }
@@ -217,28 +215,8 @@ async function getResult(
         } else {
           result = `Berhasil menambahkan pertanyaan "${questionTambah}" dengan jawaban "${answerTambah}"`;
         }
-        // await prisma.questionAnswerr.create({
-        //   data: {
-        //     question: questionTambah,
-        //     answer: answerTambah,
-        //   },
-        // });
-        // result =
-        //   "Berhasil menambahkan pertanyaan " +
-        //   `"${questionTambah}"` +
-        //   " dengan jawaban " +
-        //   `"${answerTambah}"`;
       } catch (_) {
         result = "Internal server error.😶";
-        // await prisma.questionAnswerr.update({
-        //   where: { question: questionTambah },
-        //   data: {
-        //     answer: answerTambah,
-        //   },
-        // });
-        // result =
-        //   "Pertanyaan sudah ada di database dan jawaban telah diupdate ke " +
-        //   `"${answerTambah}"`;
       }
     } else if (hapusMatches) {
       let questionHapus = hapusMatches[1];
@@ -378,7 +356,6 @@ export async function POST(req: Request) {
 
   try {
     let { choice, question, sessionId }: MessageRequestBody = await req.json();
-    console.info("session id (server)", sessionId);
     if (sessionId == undefined) {
       sessionId = await createSession(question);
       if (sessionId == undefined) {
@@ -400,11 +377,8 @@ export async function POST(req: Request) {
     });
 
     question = question.replace(/\b0+(\d+)/g, "$1").trim(); // replace digits with 0 prefix
-    console.info(question);
     const listQuestion = question.split("\n");
     const listResult = [];
-
-    console.info(listQuestion);
 
     for (const question of listQuestion) {
       if (question != "") {
@@ -420,14 +394,12 @@ export async function POST(req: Request) {
         sessionId: sessionId,
       },
     });
-    console.info(res);
     return NextResponse.json({
       is_success: true,
       message: null,
       data: res,
     });
   } catch (err) {
-    console.log(err);
     return NextResponse.json({ error: err });
   }
 }

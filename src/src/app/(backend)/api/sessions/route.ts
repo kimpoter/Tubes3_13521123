@@ -37,7 +37,6 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  console.info(session);
   try {
     const result = await prisma.session.create({
       data: {
