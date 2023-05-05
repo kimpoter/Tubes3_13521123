@@ -18,6 +18,9 @@ const exampleQuery = [
   "Kenapa Tugas Besar IF banyak sekali saya lelah mau turu",
 ];
 
+const optionRegex =
+  /^Pertanyaan tidak ditemukan di database\nApakah pertanyaan yang anda maksud ini\?\n1. (.*)\n2. (.*)\n3. (.*)$/;
+
 /**
  * get messages from server
  *
@@ -249,8 +252,7 @@ export default function ChatBox() {
                   <UserChatBubble message={chat.content} />
                 )}
                 {chat.type == MessageType.SYSTEM &&
-                  (chat.content.split("\n")[0] ==
-                  "Pertanyaan tidak ditemukan di database" ? (
+                  (optionRegex.test(chat.content) ? (
                     <OptionChatBubble
                       options={chat.content.split("\n").slice(2, 5)}
                       onClick={setMessage}
