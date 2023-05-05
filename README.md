@@ -1,12 +1,16 @@
+<p align="center">
 <img
   src="assets/shiba-l-logo.png"
   alt="Treasure Hunt App by Bebas"
-  style="display: block; margin: 10px auto; width: 100px; max-width:800; padding: 0;">
+  style="display: block; margin: 10px 0; width: 200px; max-width:800; padding: 0;">
+</p>
 
+<p align="center" style="border-radius: 10px; box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;">
 <img
   src="assets/shiba-l-landing-page.png"
   alt="Treasure Hunt App by Bebas"
-  style="display: inline-block; margin: 0 auto; width: 100%; max-width:800; padding: 0; border-radius: 10px;box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;">
+  style="display: block; margin: 0 auto; width: 100%; max-width:800; padding: 0;">
+</p>
 
 # 🐶 The Next Generation 'Chat-GPT' Implemented Using Knuth Morris Pratt and Boyer Moore Algorihtm 🐶
 
