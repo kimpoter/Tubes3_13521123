@@ -99,7 +99,7 @@ async function getResult(
     if (isValid) {
         const dateParts = dateString.split("/");
         const year = parseInt(dateParts[2]);
-        const month = parseInt(dateParts[1]); // month is zero-indexed
+        const month = parseInt(dateParts[1]); 
         const day = parseInt(dateParts[0]);
         const dayOfWeek = getDayOfWeek(year, month, day);
         result = `Tanggal ${dateString} hari ${dayOfWeek}`;
