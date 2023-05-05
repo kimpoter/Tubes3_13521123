@@ -51,7 +51,6 @@ async function sendQuestion(body: MessageRequestBody) {
   });
   if (res.ok) {
     const data = await res.json();
-    console.log("answer", data.data);
     return data.data;
   }
   return null;

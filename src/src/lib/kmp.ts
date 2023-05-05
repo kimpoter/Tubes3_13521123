@@ -49,7 +49,4 @@ function computeLPS(pattern: String) {
     return lps;
 }
 
-// console.log(kmpMatch("a", ""));
-// console.log(kmpMatch("ab", "a"));
-// console.log(kmpMatch("abc d", "abc d"));
 export { kmpMatch };

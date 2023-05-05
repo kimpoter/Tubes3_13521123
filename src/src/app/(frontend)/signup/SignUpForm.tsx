@@ -31,7 +31,6 @@ export default function SignUpForm() {
         throw Error();
       }
     } catch (err: any) {
-      console.log(err.message);
       alert(err.message);
     } finally {
       setIsLoading(false);

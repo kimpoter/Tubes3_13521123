@@ -28,7 +28,6 @@ export default function Navbar() {
   useEffect(() => {
     getSessions()
       .then((data) => {
-        console.log(data);
         setSessions(data);
       })
       .finally(() => setLoading(false));
@@ -47,7 +46,6 @@ export default function Navbar() {
     router.push(`/chat/new chat ${Math.ceil(Math.random() * 1000 + 1)}`);
 
     if (!res.ok) {
-      console.log(await res.json());
     }
   }
 

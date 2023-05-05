@@ -34,7 +34,4 @@ function bmMatch(str1: String, str2: String) {
 
     return false; // No match found
 }
-// console.log(bmMatch("a", ""));
-// console.log(bmMatch("ab", "a"));
-// console.log(bmMatch("abc d", "abc d"));
 export { bmMatch };

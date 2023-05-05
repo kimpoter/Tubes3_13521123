@@ -36,6 +36,8 @@ function calc(num1: number, num2: number, op: string) {
  */
 export function evaluate(expr: string): number {
     const opRegex = /([\+\-\*\/\(\)\^\%])/
+    const divByZeroRegex = /\/0/
+    if (divByZeroRegex.test(expr)) throw new Error("Tidak dapat membagi dengan 0")
     const numRegex = /^[-]?(\d*\.\d+|\d+)$/
     // operator's precedence
     const precedence = {
@@ -79,7 +81,6 @@ export function evaluate(expr: string): number {
                 precedence[tokens[i] as operator] <= precedence[opStack[opStack.length - 1] as operator]) {
                 outputQueue.push(opStack.pop());
             }
-            console.info("op", tokens[i], "opstack", opStack)
             opStack.push(tokens[i]);
         }
         else if (tokens[i] == '(') { // if token is an opening parantheses
@@ -110,7 +111,6 @@ export function evaluate(expr: string): number {
             outputQueue.push(op);
         }
     }
-    console.info("output queue", outputQueue);
     // calculate result
     const result: number[] = [];
     for (const token of outputQueue) {
@@ -126,7 +126,6 @@ export function evaluate(expr: string): number {
                 throw new Error(`Expected angka setelah operator '${token}'`)
             }
         }
-        console.info("token", token, "result", result)
     }
     // if there is no result
     if (result.length != 1) {
