@@ -18,7 +18,7 @@ This project implements the Knuth-Morris-Pratt (KMP) and Boyer-Moore (BM) algori
 
 ## Contents
 
-- [Tech Stack](#-tech-stack)
+- [Tech Stack](#%EF%B8%8Ftech-stack)
 - [Minimum Requirements](#-minimum-requirements)
 - [Main Features](#-main-features)
   - [Calculator](#calculator)
