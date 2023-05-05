@@ -44,7 +44,7 @@ export default function Navbar() {
     const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
     setSessions(sessions.filter((session) => session.id != id));
     setCurrentSession(undefined);
-    router.push("/chat");
+    router.push(`/chat/new chat ${Math.ceil(Math.random() * 1000 + 1)}`);
 
     if (!res.ok) {
       console.log(await res.json());
