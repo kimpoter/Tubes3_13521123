@@ -328,7 +328,7 @@ async function getResult(
           result = `${similarityScores[0].ans} (${similarityScores[0].score}%)`;
         } else {
           result = "Pertanyaan tidak ditemukan di database\n";
-          result += "Apakah pertanyaan yang anda maksud ini? \n";
+          result += "Apakah pertanyaan yang anda maksud ini?\n";
           result += similarityScores
             .slice(0, 3)
             .map(
