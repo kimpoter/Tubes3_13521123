@@ -290,6 +290,7 @@ export default function ChatBox() {
               onKeyDown={onEnterPress}
               disabled={isLoading}
               autoFocus
+              maxLength={8000}
             />
             <button className="h-full" type="submit" disabled={isLoading}>
               {!isLoading ? (
