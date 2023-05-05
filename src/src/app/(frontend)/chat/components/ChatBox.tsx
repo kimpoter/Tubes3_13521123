@@ -282,7 +282,7 @@ export default function ChatBox() {
               id="chat-input"
               rows={1}
               placeholder="Send a message..."
-              className="w-full resize-none bg-transparent focus:outline-none"
+              className="w-full resize-none bg-transparent focus:outline-none scrollbar-hide"
               value={message}
               ref={messageAreaRef}
               onChange={(e) => {

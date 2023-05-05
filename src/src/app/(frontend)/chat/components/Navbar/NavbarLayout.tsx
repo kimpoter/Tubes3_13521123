@@ -6,6 +6,7 @@ import {
   ExitIcon,
   GitHubLogoIcon,
   PlusIcon,
+  QuestionMarkCircledIcon,
 } from "@radix-ui/react-icons";
 import React, { useRef, useState } from "react";
 import { useSessionContext } from "../../context/SessionContext";
@@ -70,7 +71,7 @@ export default function NavbarLayout({
   }
   return (
     <>
-      <div className="w-full fixed top-0 z-10 h-32 px-4 py-8 bg-gradient-to-b from-slate-950">
+      <div className="w-full fixed top-0 z-10 h-32 px-4 py-8 bg-gradient-to-b from-slate-950 flex justify-between items-center">
         <button
           ref={doubleArrowRightIconRef}
           className="lg:text-slate-950"
@@ -78,6 +79,15 @@ export default function NavbarLayout({
         >
           <DoubleArrowRightIcon style={{ height: 24, width: 24 }} />
         </button>
+        <Link
+          href={
+            "https://github.com/sozyGithub/Tubes3_13521123/blob/main/README.md"
+          }
+          target="_blank"
+          className="lg:mr-10"
+        >
+          <QuestionMarkCircledIcon style={{ height: 24, width: 24 }} />
+        </Link>
       </div>
 
       <div
