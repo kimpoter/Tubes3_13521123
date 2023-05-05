@@ -18,15 +18,20 @@ This project implements the Knuth-Morris-Pratt (KMP) and Boyer-Moore (BM) algori
 
 ## Contents
 
-- [Repository Structure](#🏭-repository-structure)
+- [Tech Stack]()
 - [Minimum Requirements](#🦺-minimum-requirements)
 - [Main Features](#⚡-main-features)
   - [Calculator](#calculator)
   - [Determining the day based on a date](#determining-the-day-based-on-a-date)
   - [Adding and deleting custom questions and answers](#adding-and-deleting-custom-questions-and-answers)
   - [Multiple questions in a single prompt](#multiple-questions-in-a-single-prompt)
+- [How to Run Locally](#🤖-how-to-run-locally)
 
-## 🏭 Repository Structure
+## 🕹️Tech Stack
+
+- Next.js (full stack frontend and backend)
+- Vercel Postgres Database (databese)
+- Prisma (ORM)
 
 ## 🦺 Minimum Requirements
 
@@ -146,6 +151,14 @@ who is your fav waifu?
 how can someone doesn't like Kana?
 give me waifu recommendation!
 ```
+
+## 🤖 How to Run Locally
+
+1. Clone this repository and go to src folder
+2. Execute `npm i` on terminal
+3. Create new .env file inside this (src) folder with the content same as .env.example (fill the empty fields)
+4. Run the app using `npm run dev`
+5. Open the app on `localhost:3000` or another url that provided when compiling the app
 
 ---
 
