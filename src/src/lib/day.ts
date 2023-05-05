@@ -56,11 +56,11 @@ export function getDayOfWeek(year: number, month: number, day: number) {
     // assumption year, month, day is valid
     if (month === 1 || month === 2) {
       month += 12;
-      year -= 1;
+      year--;
     }
     const zeroBasedCentury = Math.floor(year / 100);
     const yearOfCentury = year % 100;
-    const h =
+    const dayOfWeekIdx =
       (day +
         Math.floor((13 * (month + 1)) / 5) +
         yearOfCentury +
@@ -69,7 +69,7 @@ export function getDayOfWeek(year: number, month: number, day: number) {
         2 * zeroBasedCentury) %
       7;
     const daysOfWeek = ["Sabtu", "Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
-    return daysOfWeek[h];
+    return daysOfWeek[dayOfWeekIdx];
 }
   
   
