@@ -12,20 +12,20 @@
   style="display: block; margin: 0 auto; width: 100%; max-width:800; padding: 0;">
 </p>
 
-# 🐶 The Next Generation 'Chat-GPT' Implemented Using Knuth Morris Pratt and Boyer Moore Algorihtm 🐶
+# 🐶 The Next Generation 'Chat-GPT' Implemented Using Knuth Morris Pratt and Boyer Moore Algorithm 🐶
 
 This project implements the Knuth-Morris-Pratt (KMP) and Boyer-Moore (BM) algorithms for string searching. These algorithms are widely used in computer science and can be applied in various contexts, such as text processing, data mining, and bioinformatics. The project is built using the Next.js framework from frontend to the backend also a PostgreSQL database for storing all the data.
 
 ## Contents
 
-- [Tech Stack]()
-- [Minimum Requirements](#🦺-minimum-requirements)
-- [Main Features](#⚡-main-features)
+- [Tech Stack](#-tech-stack)
+- [Minimum Requirements](#-minimum-requirements)
+- [Main Features](#-main-features)
   - [Calculator](#calculator)
   - [Determining the day based on a date](#determining-the-day-based-on-a-date)
   - [Adding and deleting custom questions and answers](#adding-and-deleting-custom-questions-and-answers)
   - [Multiple questions in a single prompt](#multiple-questions-in-a-single-prompt)
-- [How to Run Locally](#🤖-how-to-run-locally)
+- [How to Run Locally](#-how-to-run-locally)
 
 ## 🕹️Tech Stack
 
