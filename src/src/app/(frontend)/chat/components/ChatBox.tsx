@@ -32,7 +32,7 @@ async function getMessages(
   id: string | number | undefined,
   cursor: number = 0
 ): Promise<{ messages: Message[]; cursor: number | null } | null> {
-  const res = await fetch(`/api/sessions/${id}?cursor=${cursor}`);
+  const res = await fetch(`/api/sessions/${id}?cursor=${cursor}&take=${99999}`);
   if (res.ok) {
     const data = await res.json();
     return data.data;
